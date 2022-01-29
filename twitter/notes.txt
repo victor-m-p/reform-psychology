@@ -1,0 +1,22 @@
+# Testing Querries: 
+
+## "open science":
+catches e.g. #OpenScience
+catches Open and Science -- which means that we also get a lot of stuff that you contain those two..
+
+## '"open science" OR "openscience"'
+catches 'open science' & 'Open Science' (good)
+catches '#openscience' & '#OpenScience' (good)
+take-away: not case sensitive (see more: https://developer.twitter.com/en/docs/twitter-api/tweets/search/integrate/build-a-query)
+consider more search terms. 
+
+# Issues / Questions 
+* \u2026, truncates text it seems (main issue)
+* hydrate (do I need this?). 
+* lang:en ? 
+* why not PRECISELY the right number of tweets? 
+* ndjson instead of json? 
+* issue that I get "name" as well as user name? (GDPR). 
+* would be nice to get geo-location. 
+* which things do I NOT need (consider & decide). 
+* what is the smart setup in terms of putting in the "bearer token" all the time. 

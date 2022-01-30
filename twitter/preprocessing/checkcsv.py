@@ -5,8 +5,6 @@ import re
 users = pd.read_csv("/work/50114/twitter/data/csv/user/openscience_user.csv")
 tweets = pd.read_csv("/work/50114/twitter/data/csv/tweet/openscience_tweet.csv")
 
-
-
 ''' check users '''
 len(users) # 290 --- why not the same as 348!!??
 len(users.id.unique()) # 259 

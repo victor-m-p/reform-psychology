@@ -12,7 +12,7 @@ start_dates=scraping/res/start_dates.txt
 end_dates=scraping/res/end_dates.txt
 
 # venv
-sudo apt --allow-releaseinfo-change update
+#sudo apt --allow-releaseinfo-change update
 VENVNAME=psyenv
 source ../$VENVNAME/bin/activate
 python -m ipykernel install --user --name $VENVNAME --display-name "$VENVNAME"

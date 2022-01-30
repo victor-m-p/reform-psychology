@@ -1,1 +1,1 @@
-/work/50114/twitter/data/ndjson/user_test/
+/work/50114/twitter/data/ndjson/user/

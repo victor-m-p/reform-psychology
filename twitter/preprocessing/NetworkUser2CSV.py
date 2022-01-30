@@ -34,7 +34,7 @@ def convert_to_df(data):
         "followers_count": [row["public_metrics"]["followers_count"] for row in data], 
         "following_count": [row["public_metrics"]["following_count"] for row in data], 
         "tweet_count": [row["public_metrics"]["following_count"] for row in data],
-        "listed_count": [row["public_metrics"]["listed_count"] for row in data]
+        #"listed_count": [row["public_metrics"]["listed_count"] for row in data]
     }
 
     return pd.DataFrame(dataframe)

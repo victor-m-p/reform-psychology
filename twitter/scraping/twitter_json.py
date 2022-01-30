@@ -34,8 +34,8 @@ def create_url(querry, start_date, end_date, max_results = 10):
                     'end_time': end_date,
                     'max_results': max_results,
                     'expansions': 'author_id,in_reply_to_user_id,geo.place_id',
-                    'tweet.fields': 'id,text,author_id,in_reply_to_user_id,geo,conversation_id,created_at,lang,public_metrics,referenced_tweets,reply_settings,source',
-                    'user.fields': 'id,name,username,created_at,description,public_metrics,verified',
+                    'tweet.fields': 'id,text,author_id,in_reply_to_user_id,geo,conversation_id,created_at,lang,public_metrics,referenced_tweets',
+                    'user.fields': 'id,name,username,created_at,location,description,public_metrics,verified',
                     'place.fields': 'full_name,id,country,country_code,geo,name,place_type',
                     'next_token': {}}
     return (search_url, query_params)
@@ -95,7 +95,7 @@ def get_tweets(start_dates, end_dates, max_results, max_count, querry, querrynam
 
         # Inputs
         count = 0 # Counting tweets per time period
-        max_count = 100 # Max tweets per time period
+        max_count = max_count # Max tweets per time period
         flag = True
         next_token = None
         
@@ -118,16 +118,18 @@ def get_tweets(start_dates, end_dates, max_results, max_count, querry, querrynam
                 if result_count is not None and result_count > 0 and next_token is not None:
                     print("Start Date: ", start_dates[i])
 
-
                     # could turn into function I guess    
-                    tweet_info = json_response.get("data")
-                    user_info = json_response.get("includes").get("users")
-                    
-                    with open(f'{outpath_tweet}{json_name}_{querryname}_{name_counter}_tweet.ndjson', 'w') as f:
-                        ndjson.dump(tweet_info, f)
+                    #tweet_info = json_response.get("data")
+                    #user_info = json_response.get("includes")
 
-                    with open(f'{outpath_user}{json_name}_{querryname}_{name_counter}_user.ndjson', 'w') as f:
-                        ndjson.dump(user_info, f)
+                    #with open(f"/work/50144/twitter/data/test.json", "w") as f: 
+                    #    json.dump(json_response, f)
+                    
+                    with open(f'{outpath_tweet}{json_name}_{querryname}_{name_counter}_tweet.json', 'w') as f:
+                        json.dump(json_response, f)
+
+                    #with open(f'{outpath_user}{json_name}_{querryname}_{name_counter}_user.ndjson', 'w') as f:
+                    #    ndjson.dump(user_info, f)
 
                     count += result_count
                     total_tweets += result_count
@@ -142,14 +144,19 @@ def get_tweets(start_dates, end_dates, max_results, max_count, querry, querrynam
 
 
                     # could turn into function I guess    
-                    tweet_info = json_response.get("data")
-                    user_info = json_response.get("includes").get("users")
+                    #tweet_info = json_response.get("data")
+                    #user_info = json_response.get("includes").get("users")
                     
-                    with open(f'{outpath_tweet}{json_name}_{querryname}_{name_counter}_tweet.ndjson', 'w') as f:
-                        ndjson.dump(tweet_info, f)
+                    #with open(f"/work/50144/twitter/data/test.json", "w") as f: 
+                    #    json.dump(json_response, f)
+                    
+                    with open(f'{outpath_tweet}{json_name}_{querryname}_{name_counter}_tweet.json', 'w') as f:
+                        json.dump(json_response, f)
+                    #with open(f'{outpath_tweet}{json_name}_{querryname}_{name_counter}_tweet.ndjson', 'w') as f:
+                    #    ndjson.dump(tweet_info, f)
 
-                    with open(f'{outpath_user}{json_name}_{querryname}_{name_counter}_user.ndjson', 'w') as f:
-                        ndjson.dump(user_info, f)
+                    #with open(f'{outpath_user}{json_name}_{querryname}_{name_counter}_user.ndjson', 'w') as f:
+                    #    ndjson.dump(user_info, f)
 
 
                     count += result_count
@@ -178,30 +185,34 @@ def main():
     args = vars(ap.parse_args())
 
     #print(f"{bcolors.OKGREEN}[INFO] drawing graph ...{bcolors.ENDC}")
-    def read_arg(argname):
+    def read_arg(argname, unlist=True):
         with open(args[argname], "r") as fobj: 
-            argname = fobj.read().splitlines() 
-            return argname 
+            argument = fobj.read().splitlines() 
+            if unlist==True: 
+                argument = argument[0]
+            return argument
 
-    max_results = args["max_results"]
-    max_count = args["max_count"]
-    start_dates = read_arg("start_dates")
-    end_dates = read_arg("end_dates")
+    max_results = int(args["max_results"])
+    max_count = int(args["max_count"])
+    start_dates = read_arg("start_dates", False)
+    end_dates = read_arg("end_dates", False)
     token = read_arg("token") 
     querry = read_arg("querry")
     querryname = read_arg("querryname")
     outpath_tweet = read_arg("outpath_tweet")
     outpath_user = read_arg("outpath_user")
 
-    print(f"max_results: {max_results}")
-    print(f"max_count: {max_count}")
-    print(f"start_dates: {start_dates}")
-    print(f"end_dates: {end_dates}")
-    print(f"token: {token}")
-    print(f"querry: {querry}")
-    print(f"name: {querryname}")
-    print(f"out tweet: {outpath_tweet}")
-    print(f"out user: {outpath_user}")
+
+    print(f"max_results: {max_results}, type: {type(max_results)}")
+    print(f"max_count: {max_count}, type: {type(max_count)}")
+    print(f"start_dates: {start_dates}, type: {type(start_dates)}")
+    print(f"end_dates: {end_dates}, type: {type(end_dates)}")
+    print(f"token: {token}, type: {type(token)}")
+    print(f"querry: {querry}, type: {type(querry)}")
+    print(f"name: {querryname}, type: {type(querryname)}")
+    print(f"out tweet: {outpath_tweet}, type: {type(outpath_tweet)}")
+    print(f"out user: {outpath_user}, type: {type(outpath_user)}")
+
 
     # main stuff 
     get_tweets(

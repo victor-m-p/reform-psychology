@@ -51,8 +51,8 @@ def convert_to_df(data):
     """    
 
     dataframe = {
-        "tweet_id": [row["id"].encode("utf-8") for row in data], # tweet id 
-        "author_id": [row["author_id"].encode("utf-8") for row in data], # binds with the other frame 
+        "tweet_id": [row["id"] for row in data], # tweet id 
+        "author_id": [row["author_id"] for row in data], # binds with the other frame 
         #"conversation_id": [row["conversation_id"].encode("utf-8") for row in data], # not actually sure whether this is useful 
         #"text": [row["text"].encode("utf-8") if get_type(row) else "" for row in data], # this is sufficient. 
         #"lang": [row["lang"] for row in data], # probably nice before the textual analysis 
@@ -62,8 +62,8 @@ def convert_to_df(data):
         # "reply_count": [row["public_metrics"]["reply_count"] for row in data], 
         # "like_count": [row["public_metrics"]["like_count"] for row in data],
         "tweet_type": [row["referenced_tweets"][0]["type"] if row.get("referenced_tweets") else "original" for row in data], # definitely want this 
-        "tweet_id_original": [row["referenced_tweets"][0]["id"].encode("utf-8") if row.get("referenced_tweets") else row["id"].encode("utf-8") for row in data],
-        "in_reply_to": [row["in_reply_to_user_id"].encode("utf-8") if row.get("in_reply_to_user_id") else "not_reply" for row in data],
+        "tweet_id_original": [row["referenced_tweets"][0]["id"] if row.get("referenced_tweets") else row["id"] for row in data],
+        "in_reply_to": [row["in_reply_to_user_id"] if row.get("in_reply_to_user_id") else "not_reply" for row in data],
         "mentionees": [get_mentions(row["text"]) if get_type(row) else "" for row in data] # only give mentions for original stuff. 
     }
 
@@ -87,7 +87,7 @@ def load_data(inpath, outpath):
         dfs.append(convert_to_df(data))
 
     main_df = pd.concat(dfs, axis = 0).reset_index(drop = True)
-    main_df.to_csv(f"{outpath}openscience_tweet.csv", index=False)
+    main_df.to_csv(f"{outpath}openscience_tweet.csv", index=False, encoding =  "utf-8")
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

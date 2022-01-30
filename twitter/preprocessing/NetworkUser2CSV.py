@@ -59,7 +59,7 @@ def load_data(inpath, outpath):
         dfs.append(convert_to_df(data))
 
     main_df = pd.concat(dfs, axis = 0).reset_index(drop = True)
-    main_df.to_csv(f"{outpath}openscience_user.csv", index=False)
+    main_df.to_csv(f"{outpath}openscience_user.csv", index=False, encoding =  "utf-8")
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

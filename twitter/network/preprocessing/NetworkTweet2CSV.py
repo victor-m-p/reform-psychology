@@ -15,6 +15,7 @@ import re
 import pandas as pd
 import ndjson
 import datetime
+import pickle
 from tqdm import tqdm
 from pathlib import Path
 
@@ -53,8 +54,8 @@ def convert_to_df(data):
     dataframe = {
         "tweet_id": [row["id"] for row in data], # tweet id 
         "author_id": [row["author_id"] for row in data], # binds with the other frame 
-        #"conversation_id": [row["conversation_id"].encode("utf-8") for row in data], # not actually sure whether this is useful 
-        #"text": [row["text"].encode("utf-8") if get_type(row) else "" for row in data], # this is sufficient. 
+        #"conversation_id": [row["conversation_id"] for row in data], # not actually sure whether this is useful 
+        #"text": [row["text"] if get_type(row) else "" for row in data], # this is sufficient. 
         #"lang": [row["lang"] for row in data], # probably nice before the textual analysis 
         "created_at": [row["created_at"] for row in data], # probably nice for analysis through time. 
         # "hashtags": [", ".join([x["tag"] for x in row.get("entities").get("hashtags")]) if row.get("entities") and row.get("entities").get("hashtags") else None for row in data], # hmmm... I don't think I have this right now. 
@@ -87,7 +88,13 @@ def load_data(inpath, outpath):
         dfs.append(convert_to_df(data))
 
     main_df = pd.concat(dfs, axis = 0).reset_index(drop = True)
-    main_df.to_csv(f"{outpath}openscience_tweet.csv", index=False, encoding =  "utf-8")
+    main_df.to_csv(f"{outpath}openscience_tweet.csv", index=False, encoding='utf-8')
+    # new try 
+    #with open(f"{outpath}openscience_tweet.pkl", "wb") as f: 
+    #    pickle.dump(main_df, f)
+
+    # one try 
+    #main_df.to_pickle(f"{outpath}openscience_tweet.pkl")
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -95,4 +102,4 @@ if __name__ == '__main__':
     ap.add_argument('-o','--outpath', required=True, help='path to output directory for .csv file') 
     args = vars(ap.parse_args())
 
-    df = load_data(inpath = args['inpath'], outpath = args['outpath'])
+    load_data(inpath = args['inpath'], outpath = args['outpath'])

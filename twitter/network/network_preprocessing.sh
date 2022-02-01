@@ -5,15 +5,15 @@
 # venv
 #sudo apt --allow-releaseinfo-change update
 VENVNAME=psyenv
-source ../$VENVNAME/bin/activate
+source ../../$VENVNAME/bin/activate
 python -m ipykernel install --user --name $VENVNAME --display-name "$VENVNAME"
 
 # run tweet preprocessing for networks  
 python preprocessing/NetworkTweet2CSV.py \
-	-i data/ndjson/tweet_test/ \
-	-o data/csv/tweet/ \
+	-i ../data/ndjson/tweet_test/ \
+	-o ../data/network/ \
 
 # run user preprocessing for networks 
 python preprocessing/NetworkUser2CSV.py \
-	-i data/ndjson/user_test/ \
-	-o data/csv/user/
+	-i ../data/ndjson/user_test/ \
+	-o ../data/network/

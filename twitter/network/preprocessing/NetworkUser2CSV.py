@@ -59,7 +59,8 @@ def load_data(inpath, outpath):
         dfs.append(convert_to_df(data))
 
     main_df = pd.concat(dfs, axis = 0).reset_index(drop = True)
-    main_df.to_csv(f"{outpath}openscience_user.csv", index=False, encoding =  "utf-8")
+    main_df.to_csv(f"{outpath}openscience_user.csv", index=False, encoding='utf-8')
+    #main_df.to_pickle(f"{outpath}openscience_user.pkl")
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -67,4 +68,4 @@ if __name__ == '__main__':
     ap.add_argument('-o','--outpath', required=True, help='path to output directory for .csv file') 
     args = vars(ap.parse_args())
 
-    df = load_data(inpath = args['inpath'], outpath = args['outpath'])
+    load_data(inpath = args['inpath'], outpath = args['outpath'])

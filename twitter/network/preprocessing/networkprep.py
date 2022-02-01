@@ -1,6 +1,7 @@
 import pandas as pd 
 import numpy as np
 import re
+import pickle
 
 tweets = pd.read_csv("/work/50114/twitter/data/csv/tweet/openscience_tweet.csv")
 users = pd.read_csv("/work/50114/twitter/data/csv/user/openscience_user.csv")
@@ -35,6 +36,7 @@ user_author.groupby('mentionees').size().to_frame('count').reset_index().sort_va
 df_total = df_exp.merge(user_author, on = 'mentionees', how = 'left')
 df_total.head(5)
 len(df_total) 
+df_total.dtypes
 
 ''' actual partition '''
 # should probably be better ways of doing this. 
@@ -53,6 +55,7 @@ df_original_reply['edge_type'] = 'mention'
 # bind them 
 df_edgelist = pd.concat([df_retweet_quote, df_original_reply])
 df_edgelist.head(5)
+df_edgelist.dtypes
 
-# save for now 
-df_edgelist.to_csv("/work/50114/twitter/data/csv/network/test.csv", index=False)
+# save for now
+df_edgelist.to_pickle("/work/50114/twitter/data/network/df_edgelist.pkl")  

@@ -1,0 +1,6 @@
+## setting up environment: 
+1. follow this to set up miniconda: https://ostechnix.com/how-to-install-miniconda-in-linux/
+2. get .yml from here and create environment: https://github.com/BayesianModelingandComputationInPython/BookCode_Edition1#environment-installation
+3. conda activate bmcp
+
+## 

@@ -1,0 +1,74 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+---
+title: "Untitled"
+output: html_document
+---
+
+# if first session on Ucloud
+
+```{r, include=FALSE}
+
+# consider pacman
+install.packages('tidyverse')
+install.packages('brms')
+install.packages("ggthemes")
+library(tidyverse)
+library(brms)
+library(ggthemes)
+
+# set up cmdstanr 
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2)
+
+# rethinking 
+install.packages(c("coda","mvtnorm","devtools","loo","dagitty"))
+devtools::install_github("rmcelreath/rethinking")
+library(rethinking)
+
+```
+
+# if NOT first session on Ucloud
+
+```{r}
+
+library(tidyverse)
+library(brms)
+library(ggthemes)
+library(rethinking)
+
+```
+
+## load data 
+
+```{r}
+
+d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv")
+
+```
+
+## EDA 
+
+### number of authors vs. c5* by condition
+### --- could be an interaction here (focus on e.g. maylabs / the large-scale collaborations?)
+
+```{r}
+
+d %>% ggplot(aes(x = n_authors, y = c_5, color = condition)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+
+```
+
+### number of authors vs. c5* by condition
+### --- completely flat 
+
+```{r}
+d %>% ggplot(aes(x = days_after_2010, y = c_5, color = condition)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+```

@@ -1,0 +1,197 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+# if first session on Ucloud
+
+```{r, include=FALSE}
+
+# consider pacman
+install.packages('tidyverse')
+install.packages('brms')
+install.packages("ggthemes")
+library(tidyverse)
+library(brms)
+library(ggthemes)
+
+# set up cmdstanr 
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2)
+
+# rethinking 
+install.packages(c("coda","mvtnorm","devtools","loo","dagitty"))
+devtools::install_github("rmcelreath/rethinking")
+library(rethinking)
+
+```
+
+# if NOT first session on Ucloud
+
+```{r}
+
+library(tidyverse)
+library(brms)
+library(ggthemes)
+library(rethinking)
+
+```
+
+# load data
+
+```{r}
+
+d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv")
+
+```
+
+
+### fit model (just intercept for one group) ###
+
+```{r}
+
+# subset data 
+d_exp <- d %>% 
+  filter(condition == "experiment")
+
+d_ctrl <- d %>%
+  filter(condition == "control")
+
+```
+
+# fit experimental
+
+```{r}
+
+# zi: probability of zero. default is flat (0, 1) specified with beta(1, 1), we can increase weight around 0.5 with beta(2, 2)
+# Intercept: not sure (also what is reasonable, check "rethinking" book)
+
+b_intercept_exp <- 
+  brm(data = d_exp, family = zero_inflated_poisson,
+      c_5 ~ 1,
+      prior = c(prior(normal(0, 10), class = Intercept),
+                prior(beta(2, 2), class = zi)),  # the brms default is beta(1, 1)
+      cores = 4,
+      seed = 11) 
+
+```
+
+# fit control 
+
+```{r}
+
+b_intercept_ctrl <- 
+  brm(data = d_ctrl, family = zero_inflated_poisson,
+      c_5 ~ 1,
+      prior = c(prior(normal(0, 10), class = Intercept),
+                prior(beta(2, 2), class = zi)),  # the brms default is beta(1, 1)
+      cores = 4,
+      seed = 11) 
+
+```
+
+# check whether this makes any sense 
+intercept: small difference w. non-overlapping 95% CI.
+zi: small difference with overlapping 95% CI
+
+```{r}
+
+# intercept: 2.64 (2.60, 2.67)
+# zi: 0.44 (0.39, 0.49)
+print(b_intercept_exp)
+
+```
+
+```{r}
+
+# intercept: 2.55 (2.51, 2.59)
+# zi: 0.52 (0.47, 0.57)
+print(b_intercept_ctrl)
+
+```
+
+# plot
+
+```{r}
+
+tibble(`zi prior`= seq(from = 0, to = 1, length.out = 50)) %>%
+  mutate(`beta(1, 1)` = dbeta(`zi prior`, 1, 1),
+         `beta(2, 2)` = dbeta(`zi prior`, 2, 2))  %>% 
+  gather(prior, density, -`zi prior`) %>% 
+  
+  ggplot(aes(x    = `zi prior`, 
+             ymin = 0,
+             ymax = density)) +
+  geom_ribbon(aes(fill = prior)) +
+  scale_fill_manual(values = c(canva_pal("Green fields")(4)[4],
+                               canva_pal("Green fields")(4)[2])) +
+  scale_x_continuous("prior for zi", breaks = c(0, .5, 1)) +
+  scale_y_continuous(NULL, breaks = NULL) +
+  theme_hc() +
+  theme(plot.background = element_rect(fill = "grey92"),
+        legend.position = "none") +
+  facet_wrap(~prior)
+
+```
+
+# plot our posteriors
+
+```{r}
+
+dzip <- function( x , p , lambda , log=TRUE ) {
+    ll <- ifelse(
+        x==0 ,
+        p + (1-p)*exp(-lambda) ,
+        (1-p)*dpois(x,lambda,FALSE)
+    )
+    if ( log==TRUE ) ll <- log(ll)
+    return(ll)
+}
+
+```
+
+### data generation does not look good. 
+### probably because we have crazy outliers. 
+### should be many more small values. 
+
+```{r}
+
+p_b11.4      <- posterior_summary(b_intercept_exp)[2, 1]
+lambda_b11.4 <- posterior_summary(b_intercept_exp)[1, 1] %>% exp()
+
+
+tibble(x = 0:100) %>% 
+  mutate(density = dzip(x = x, 
+                        p = p_b11.4, 
+                        lambda = lambda_b11.4, 
+                        log = F)) %>% 
+  
+  ggplot(aes(x = x, y = density)) +
+  geom_col(fill = canva_pal("Green fields")(4)[4]) +
+  xlab("Manuscripts completed") +
+  theme_hc() +
+  theme(plot.background = element_rect(fill = "grey92"))
+
+```
+
+```{r}
+
+p_b11.4      <- posterior_summary(b_intercept_ctrl)[2, 1]
+lambda_b11.4 <- posterior_summary(b_intercept_ctrl)[1, 1] %>% exp()
+
+
+tibble(x = 0:100) %>% 
+  mutate(density = dzip(x = x, 
+                        p = p_b11.4, 
+                        lambda = lambda_b11.4, 
+                        log = F)) %>% 
+  
+  ggplot(aes(x = x, y = density)) +
+  geom_col(fill = canva_pal("Green fields")(4)[4]) +
+  xlab("Manuscripts completed") +
+  theme_hc() +
+  theme(plot.background = element_rect(fill = "grey92"))
+
+```
+

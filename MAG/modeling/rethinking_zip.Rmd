@@ -1,0 +1,186 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+
+
+# if first session on Ucloud
+
+```{r, include=FALSE}
+
+# consider pacman
+install.packages('tidyverse')
+install.packages('brms')
+install.packages("ggthemes")
+library(tidyverse)
+library(brms)
+library(ggthemes)
+
+# set up cmdstanr 
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2)
+
+# rethinking 
+install.packages(c("coda","mvtnorm","devtools","loo","dagitty"))
+devtools::install_github("rmcelreath/rethinking")
+library(rethinking)
+
+```
+
+# if NOT first session on Ucloud
+
+```{r}
+
+library(tidyverse)
+library(brms)
+library(ggthemes)
+library(rethinking)
+
+```
+
+
+##### zero-inflated Poisson, ZIP (CH 11.2) #####
+https://bookdown.org/ajkurz/Statistical_Rethinking_recoded/monsters-and-mixtures.html#zero-inflated-outcomes
+
+```{r}
+
+# define parameters
+prob_drink <- 0.2  # 20% of days
+rate_work  <- 1    # average 1 manuscript per day
+
+# sample one year of production
+n <- 365
+
+# simulate days monks drink
+set.seed(11)
+drink <- rbinom(n, 1, prob_drink)
+
+# simulate manuscripts completed
+y <- (1 - drink) * rpois(n, rate_work)
+
+```
+
+
+```{r}
+
+d <-
+  tibble(Y = y) %>%
+  arrange(Y) %>% 
+  mutate(zeros = c(rep("zeros_drink", times = sum(drink)),
+                   rep("zeros_work",  times = sum(y == 0 & drink == 0)),
+                   rep("nope",        times = n - sum(y == 0))
+                   )) 
+  
+  ggplot(data = d, aes(x = Y)) +
+  geom_histogram(aes(fill = zeros),
+                 binwidth = 1, size = 1/10, color = "grey92") +
+  scale_fill_manual(values = c(canva_pal("Green fields")(4)[1], 
+                               canva_pal("Green fields")(4)[2], 
+                               canva_pal("Green fields")(4)[1])) +
+  xlab("Manuscripts completed") +
+  theme_hc() +
+  theme(plot.background = element_rect(fill = "grey92"),
+        legend.position = "none")
+
+```
+
+```{r}
+d
+```
+
+
+## fit model 
+p = probability of 0
+lambda = shape 
+
+```{r}
+
+
+b11.4 <- 
+  brm(data = d, family = zero_inflated_poisson,
+      Y ~ 1,
+      prior = c(prior(normal(0, 10), class = Intercept), # very loose prior
+                prior(beta(2, 2), class = zi)), # reasonable
+      cores = 4,
+      seed = 11) 
+
+```
+
+### check basics
+
+```{r}
+
+print(b11.4)
+
+```
+
+### visualize our prior 
+
+```{r}
+
+tibble(`zi prior`= seq(from = 0, to = 1, length.out = 50)) %>%
+  mutate(`beta(1, 1)` = dbeta(`zi prior`, 1, 1),
+         `beta(2, 2)` = dbeta(`zi prior`, 2, 2))  %>% 
+  gather(prior, density, -`zi prior`) %>% 
+  
+  ggplot(aes(x    = `zi prior`, 
+             ymin = 0,
+             ymax = density)) +
+  geom_ribbon(aes(fill = prior)) +
+  scale_fill_manual(values = c(canva_pal("Green fields")(4)[4],
+                               canva_pal("Green fields")(4)[2])) +
+  scale_x_continuous("prior for zi", breaks = c(0, .5, 1)) +
+  scale_y_continuous(NULL, breaks = NULL) +
+  theme_hc() +
+  theme(plot.background = element_rect(fill = "grey92"),
+        legend.position = "none") +
+  facet_wrap(~prior)
+
+```
+
+### exponentiated
+
+```{r}
+
+fixef(b11.4)[1, ] %>%
+  exp()
+
+```
+
+### posterior check
+
+```{r}
+dzip <- function( x , p , lambda , log=TRUE ) {
+    ll <- ifelse(
+        x==0 ,
+        p + (1-p)*exp(-lambda) ,
+        (1-p)*dpois(x,lambda,FALSE)
+    )
+    if ( log==TRUE ) ll <- log(ll)
+    return(ll)
+}
+
+```
+
+
+```{r}
+
+p_b11.4      <- posterior_summary(b11.4)[2, 1]
+lambda_b11.4 <- posterior_summary(b11.4)[1, 1] %>% exp()
+
+tibble(x = 0:4) %>% 
+  mutate(density = dzip(x = x, 
+                        p = p_b11.4, 
+                        lambda = lambda_b11.4, 
+                        log = F)) %>% 
+  
+  ggplot(aes(x = x, y = density)) +
+  geom_col(fill = canva_pal("Green fields")(4)[4]) +
+  xlab("Manuscripts completed") +
+  theme_hc() +
+  theme(plot.background = element_rect(fill = "grey92"))
+
+```
+

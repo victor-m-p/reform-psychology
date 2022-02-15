@@ -11,136 +11,11 @@ import numpy as np
 import arviz as az
 import matplotlib.pyplot as plt
 
-''' beta-binomial '''
-
-# observerd
-Y = stats.bernoulli(0.7).rvs(20)
-
-# Declare a model in PyMC3
-## numpy for blas... 
-with pm.Model() as model:
-    # Specify the prior distribution of unknown parameter
-    θ = pm.Beta("θ", alpha=1, beta=1)
-
-    # Specify the likelihood distribution and condition on the observed data
-    y_obs = pm.Binomial("y_obs", n=1, p=θ, observed=Y)
-
-    # Sample from the posterior distribution
-    idata = pm.sample(1000, return_inferencedata=True)
-
-# predictive distributions (prior & posterior)
-pred_dists = (pm.sample_prior_predictive(1000, model)["y_obs"],
-              pm.sample_posterior_predictive(idata, 1000, model)["y_obs"])
-
-''' effective samples & rhat '''
-good_chains = stats.beta.rvs(2, 5,size=(2, 2000))
-bad_chains0 = np.random.normal(np.sort(good_chains, axis=None), 0.05,
-                               size=4000).reshape(2, -1)
-
-bad_chains1 = good_chains.copy()
-for i in np.random.randint(1900, size=4):
-    bad_chains1[i%2:,i:i+100] = np.random.beta(i, 950, size=100)
-
-chains = {"good_chains":good_chains,
-          "bad_chains0":bad_chains0,
-          "bad_chains1":bad_chains1}
-
-az.ess(chains) # high for good_chains (fine). 
-az.rhat(chains) # < 1.01 for good_chains (fine).
-az.mcse(chains) # monto-carlo standard error (very low for good_chains).
-az.plot_mcse(chains)
-
-## the only one we will actually use (to get everything) ##
-az.summary(chains, kind="diagnostics")
-
-''' trace plots '''
-az.plot_trace(chains)
-
-# auto-correlation (should only be small random fluctuations)
-az.plot_autocorr(chains, combined=True)
-
-# rank-plot (should be uniform)
-## more sensitive than trace-plots (they recommend). 
-az.plot_rank(chains, kind="bars")
-
-''' divergences '''
-with pm.Model() as model_0:
-    θ1 = pm.Normal("θ1", 0, 1, testval=0.1)
-    θ2 = pm.Uniform("θ2", -θ1, θ1)
-    idata_0 = pm.sample(return_inferencedata=True)
-
-# black bars = divergences 
-az.plot_trace(idata_0, kind="rank_bars")
-
-# check divergences
-az.plot_pair(idata_0, divergences=True)
-
-# reparameterize
-with pm.Model() as model_1:
-    θ1 = pm.HalfNormal("θ1", 1 / (1-2/np.pi)**0.5)
-    θ2 = pm.Uniform("θ2", -θ1, θ1)
-    idata_1 = pm.sample(return_inferencedata=True)
-
-# reparameterize + target-accept. 
-with pm.Model() as model_1bis:
-    θ1 = pm.HalfNormal("θ1", 1 / (1-2/np.pi)**0.5)
-    θ2 = pm.Uniform("θ2", -θ1, θ1)
-    idata_1bis = pm.sample(target_accept=.95, return_inferencedata=True)
-
-''' model evaluation / comparison '''
-# LOO is good
-y_obs = np.random.normal(0, 1, size=100)
-idatas_cmp = {}
-
-# Generate data from Skewnormal likelihood model
-# with fixed mean and skewness and random standard deviation
-with pm.Model() as mA:
-    σ = pm.HalfNormal("σ", 1)
-    y = pm.SkewNormal("y", 0, σ, alpha=1, observed=y_obs)
-    idataA = pm.sample(return_inferencedata=True)
-    # add_groups modifies an existing az.InferenceData
-    # has to be indented (contrary to in the book)
-    idataA.add_groups({"posterior_predictive":
-                    {"y":pm.sample_posterior_predictive(idataA)["y"][None,:]}})
-
-idatas_cmp["mA"] = idataA
-
-# Generate data from Normal likelihood model
-# with fixed mean with random standard deviation
-with pm.Model() as mB:
-    σ = pm.HalfNormal("σ", 1)
-    y = pm.Normal("y", 0, σ, observed=y_obs)
-    idataB = pm.sample(return_inferencedata=True)
-    # again has to be indented (because we sample)
-    idataB.add_groups({"posterior_predictive":
-                    {"y":pm.sample_posterior_predictive(idataB)["y"][None,:]}})
-
-idatas_cmp["mB"] = idataB
-
-# Generate data from Normal likelihood model
-# with random mean and random standard deviation
-with pm.Model() as mC:
-    μ = pm.Normal("μ", 0, 1)
-    σ = pm.HalfNormal("σ", 1)
-    y = pm.Normal("y", μ, σ, observed=y_obs)
-    idataC = pm.sample(return_inferencedata=True)
-    idataC.add_groups({"posterior_predictive":
-                    {"y":pm.sample_posterior_predictive(idataC)["y"][None,:]}})
-
-idatas_cmp["mC"] = idataC
-
-# az.compare()
-az.compare(idatas_cmp)
-
-# LOO-PIT (is- although not quite)
-az.plot_bpv(idataA, kind="u_value")
-az.plot_bpv(idataC, kind="u_value")
-
 ''' 3. Linear model '''
 # https://github.com/BayesianModelingandComputationInPython/BookCode_Edition1/blob/main/notebooks/chp_03.ipynb
 ### PENGUINS ###
 ## comparing two groups ## 
-penguins = pd.read_csv("../BookCode_Edition1/data/penguins.csv")
+penguins = pd.read_csv("../../BookCode_Edition1/data/penguins.csv")
 penguins.head(5)
 # subset to needed columns 
 missing_data = penguins.isnull()[
@@ -305,4 +180,172 @@ az.plot_posterior(inf_data_adelie_flipper_length_c, var_names=["beta0", "beta1"]
 
 ### MULTIPLE LINEAR REGRESSSION ###
 # second covariate: sex 
-# got to here ... 
+
+# Binary encoding of the categorical predictor
+## for males we have 2 terms (beta2 cancels) for females 3 (beta2 matters)
+## so beta2 encodes gender difference. 
+sex_obs = penguins.loc[adelie_mask ,"sex"].replace({"male":0, "female":1})
+
+with pm.Model() as model_penguin_mass_categorical:
+    σ = pm.HalfStudentT("σ", 100, 2000)
+    beta0 = pm.Normal("beta0", 0, 3000)
+    beta1 = pm.Normal("beta1", 0, 3000)
+    beta2 = pm.Normal("beta2", 0, 3000)
+
+    μ = pm.Deterministic(
+        "μ", beta0 + beta1 * adelie_flipper_length_obs + beta2 * sex_obs)
+
+    mass = pm.Normal("mass", mu=μ, sigma=σ, observed=adelie_mass_obs)
+
+    inf_data_penguin_mass_categorical = pm.sample(
+        target_accept=.9, return_inferencedata=True)
+
+# check it 
+az.plot_posterior(inf_data_penguin_mass_categorical, var_names=["beta0", "beta1", "beta2"], textsize=20);
+az.plot_trace(inf_data_penguin_mass_categorical, compact=False, divergences="bottom", kind="rank_bars");
+
+## with bambi (not done for now) -- how to specify priors?
+import bambi as bmb
+model = bmb.Model("body_mass_g ~ flipper_length_mm + sex",
+                  penguins[adelie_mask])
+trace = model.fit()
+
+## nice plot ##
+# Fix colors
+fig, ax = plt.subplots()
+alpha_1 = inf_data_penguin_mass_categorical.posterior.mean().to_dict()["data_vars"]["beta0"]["data"]
+beta_1 = inf_data_penguin_mass_categorical.posterior.mean().to_dict()["data_vars"]["beta1"]["data"]
+beta_2 = inf_data_penguin_mass_categorical.posterior.mean().to_dict()["data_vars"]["beta2"]["data"]
+
+
+flipper_length = np.linspace(adelie_flipper_length_obs.min(), adelie_flipper_length_obs.max(), 100)
+
+mass_mean_male = alpha_1 + beta_1 * flipper_length
+mass_mean_female = alpha_1 + beta_1 * flipper_length + beta_2
+
+ax.plot(flipper_length, mass_mean_male,
+         label="Male")
+
+ax.plot(flipper_length, mass_mean_female, c='C4',
+         label="Female")
+
+ax.scatter(adelie_flipper_length_obs, adelie_mass_obs, c=[{0:"k", 1:"b"}[code] for code in sex_obs.values])
+
+# Figure out how to do this from inference data
+#az.plot_hpd(adelie_flipper_length, trace.get_values(varname="μ"), credible_interval=0.94, color='k', ax=ax)
+
+ax.set_xlabel('Flipper Length')
+ax.set_ylabel('Mass')
+ax.legend()
+plt.plot(); 
+
+### model comparison again ###
+# new model much better (reduces uncertainty) 
+az.plot_forest([inf_data_adelie_penguin_mass,
+        inf_data_adelie_flipper_regression,
+        inf_data_penguin_mass_categorical],
+        var_names=["σ"], combined=True)
+
+## counterfactuals (not run for now) since it is tf (but we can look this up). 
+
+## GLM ##
+# logistic
+species_filter = penguins["species"].isin(["Adelie", "Chinstrap"])
+bill_length_obs = penguins.loc[species_filter, "bill_length_mm"].values
+species = pd.Categorical(penguins.loc[species_filter, "species"])
+
+with pm.Model() as model_logistic_penguins_bill_length:
+    beta0 = pm.Normal("beta0", mu=0, sigma=10)
+    beta1 = pm.Normal("beta1", mu=0, sigma=10)
+
+    μ = beta0 + pm.math.dot(bill_length_obs, beta1)
+
+    # Application of our sigmoid  link function
+    θ = pm.Deterministic("θ", pm.math.sigmoid(μ))
+
+    # Useful for plotting the decision boundary later
+    bd = pm.Deterministic("bd", -beta0/beta1)
+
+    # Note the change in likelihood
+    yl = pm.Bernoulli("yl", p=θ, observed=species.codes)
+
+    prior_predictive_logistic_penguins_bill_length = pm.sample_prior_predictive()
+    trace_logistic_penguins_bill_length = pm.sample(5000, chains=2)
+    inf_data_logistic_penguins_bill_length = az.from_pymc3(
+        prior=prior_predictive_logistic_penguins_bill_length,
+        trace=trace_logistic_penguins_bill_length)
+
+# prior expectation (even, as it should be)
+ax = az.plot_dist(prior_predictive_logistic_penguins_bill_length["yl"], color="C2")
+ax.set_xticklabels(["Adelie: 0", "Chinstrap: 1"] )
+plt.plot();
+
+## can do multiple regression for the logistic (not done here). 
+
+## log odds 
+
+## picking priors (sex ratio, McElreath)
+# quick plot
+x = np.arange(-2,3,1)
+y = [50, 44, 50, 47, 56]
+
+import matplotlib.ticker as mtick
+fig, ax = plt.subplots()
+
+ax.scatter(x, y)
+ax.set_xticks(x)
+ax.yaxis.set_major_formatter(mtick.PercentFormatter(decimals=0))
+ax.set_ylim(40, 60)
+ax.set_xlabel("Attractiveness of Parent")
+ax.set_ylabel("% of Girl Babies")
+ax.set_title("Attractiveness of Parent and Sex Ratio")
+plt.plot(); 
+
+# uninformative priors (very wide)
+with pm.Model() as model_uninformative_prior_sex_ratio:
+    σ = pm.Exponential("σ", .5)
+    beta1 = pm.Normal("beta1", 0, 20) # 0 --> no slope (no difference by att. of parent)
+    beta0 = pm.Normal("beta0", 50, 20) # 50 --> 50% --> equal sex-ratio
+
+    μ = pm.Deterministic("μ", beta0 + beta1 * x)
+
+    ratio = pm.Normal("ratio", mu=μ, sigma=σ, observed=y)
+
+    prior_predictive_uninformative_prior_sex_ratio = pm.sample_prior_predictive(
+        samples=10000)
+    trace_uninformative_prior_sex_ratio = pm.sample(random_seed=0)
+    inf_data_uninformative_prior_sex_ratio = az.from_pymc3(
+        trace=trace_uninformative_prior_sex_ratio,
+        prior=prior_predictive_uninformative_prior_sex_ratio)
+
+# check posterior (overlap with 50 and 0, so no effect). 
+az.plot_posterior(inf_data_uninformative_prior_sex_ratio.prior, var_names=["beta0", "beta1"])
+
+# stats summary
+az.summary(inf_data_uninformative_prior_sex_ratio, var_names=["beta0", "beta1", "σ"], kind="stats")
+
+# check prior and posterior
+# prior is too wide here (i.e. we have "impossible" cases, such as 105 boys per 100 births -- intercept)
+# good plot code here to look at. 
+
+## new model (very informative)
+with pm.Model() as model_informative_prior_sex_ratio:
+    σ = pm.Exponential("σ", .5)
+    beta1 = pm.Normal("beta1", 0, .5)
+    beta0 = pm.Normal("beta0", 48.5, .5)
+
+    μ = pm.Deterministic("μ", beta0 + beta1 * x)
+
+    ratio = pm.Normal("ratio", mu=μ, sigma=σ, observed=y)
+
+
+    prior_predictive_informative_prior_sex_ratio = pm.sample_prior_predictive(
+        samples=10000)
+    trace_informative_prior_sex_ratio = pm.sample(random_seed=0)
+    inf_data_informative_prior_sex_ratio = az.from_pymc3(
+        trace=trace_informative_prior_sex_ratio,
+        prior=prior_predictive_informative_prior_sex_ratio)
+
+# biases the model (constrains) too much, i.e. we force it to be less than 50%
+az.summary(inf_data_informative_prior_sex_ratio, var_names=["beta0", "beta1", "σ"], kind="stats")
+

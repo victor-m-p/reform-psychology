@@ -8,33 +8,22 @@ output: html_document
 ```{r, include=FALSE}
 
 # consider pacman
-install.packages('tidyverse')
-install.packages('brms')
-install.packages("ggthemes")
-library(tidyverse)
-library(brms)
-library(ggthemes)
+install.packages("pacman") 
+library(pacman)
+
+p_load(tidyverse, brms, ggthemes)
+#install.packages('tidyverse')
+#install.packages('brms')
+#install.packages("ggthemes")
+#library(tidyverse)
+#library(brms)
+#library(ggthemes)
 
 # set up cmdstanr 
 install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
 library(cmdstanr)
 install_cmdstan(cores = 2)
 
-# rethinking 
-install.packages(c("coda","mvtnorm","devtools","loo","dagitty"))
-devtools::install_github("rmcelreath/rethinking")
-library(rethinking)
-
-```
-
-# if NOT first session on Ucloud
-
-```{r}
-
-library(tidyverse)
-library(brms)
-library(ggthemes)
-library(rethinking)
 
 ```
 
@@ -42,12 +31,402 @@ library(rethinking)
 
 ```{r}
 
-d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv")
+# check data
+d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_coded = ifelse(condition == "experiment", 1, 0),
+         condition_fct = as_factor(condition), 
+         teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
+         days_after_2010_scaled = days_after_2010/max(days_after_2010)) %>% # because min = 0
+  glimpse()
+
+```
+
+## straight to main model (no random slopes yet though) ##
+
+```{r}
+
+# main model & interaction model (fit both negative binomial & zero-inflated poisson)
+# just changed to factor now 
+f_large_main = bf(c_5 ~ 0 + condition_fct + teamsize_scaled + days_after_2010_scaled)
+f_large_int = bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + condition_fct:days_after_2010_scaled)
+
+```
+
+# get priors for zero-inflated poisson and negative binomial 
+
+## zero-inflated (both models): 
+class = b, 
+class = zi 
+
+## negative binomial (both models): 
+class = b,
+class = gamma
+
+```{r}
+
+get_prior(
+  formula = f_large_int,
+  data = d,
+  family = zero_inflated_poisson(),
+)
+
+get_prior(
+  formula = f_large_int, 
+  data = d, 
+  family = negbinomial()
+)
+
+```
+
+# fit models 
+
+# 1. zero-inflated poisson main-effects 
+
+```{r}
+
+# Rhat through the roof (before scaling our stuff to (0,1) range). 
+# very different from with intercept 
+# also weird that there is effect of days (if there was some I think it should be negative). 
+zip_large_main <- 
+  brm(data = d, family = zero_inflated_poisson,
+      f_large_main,
+      prior = c(prior(beta(2, 2), class = zi),  # the brms default is beta(1, 1)
+                prior(normal(0, 5), class = b)),  # very wide prior
+      cores = 4,
+      seed = 11) 
+
+```
+
+```{r}
+print(zip_large_main)
+```
+
+
+# 2. zero-inflated poisson interaction-effects
+
+```{r}
+
+zip_large_int <- 
+  brm(data = d, family = zero_inflated_poisson,
+      f_large_int,
+      prior = c(prior(beta(2, 2), class = zi),  # the brms default is beta(1, 1)
+                prior(normal(0, 5), class = b)),  # very wide prior
+      cores = 4,
+      seed = 11) 
 
 ```
 
 
-### fit model (just intercept for one group) ###
+```{r}
+
+# how to interpret? 
+# makes sense that condition:teamsize is positive & that condition:days negative (given plots) I think. 
+# notive that the effects (for interatctions) are very small here (because 0-1 scaling), I just do not get why condition_coded is so large. 
+print(zip_large_int)
+
+```
+## intermezzo: model comparison ## 
+have pareto K issue & main model much better than interaction here. 
+
+```{r}
+
+zip_large_main <- add_criterion(zip_large_main, "loo", moment_match = TRUE)
+zip_large_int <- add_criterion(zip_large_int, "loo", moment_match = TRUE)
+
+# compare the WAIC estimates
+w <- loo_compare(zip_large_main, zip_large_int,
+                 criterion = "loo")
+
+print(w)
+
+# 100% weight for main model 
+model_weights(zip_large_main, zip_large_int, 
+              weights = "loo") %>% 
+  round(digits = 2)
+
+```
+
+
+# 3. main effects negative binomial 
+
+```{r}
+
+# Rhat through the roof (before scaling our stuff to (0,1) range). 
+# very different from with intercept 
+# also weird that there is effect of days (if there was some I think it should be negative). 
+negbin_large_main <- 
+  brm(data = d, family = negbinomial,
+      f_large_main,
+      prior = c(prior(gamma(0.01, 0.01), class = shape),  # using the default
+                prior(normal(0, 5), class = b)),  # very wide prior
+      cores = 4,
+      seed = 11) 
+
+```
+
+```{r}
+
+# really large effect of teamsize now (should make sense?)
+print(negbin_large_main)
+
+```
+# 4. negative binomial with interaction 
+
+```{r}
+
+negbin_large_int <- 
+  brm(data = d, family = negbinomial,
+      f_large_int,
+      prior = c(prior(gamma(0.01, 0.01), class = shape),  # using the default
+                prior(normal(0, 5), class = b)),  # very wide prior
+      cores = 4,
+      seed = 11) 
+
+```
+
+```{r}
+# seems like the interaction forces condition_coded to matter a lot (which is slightly weird) 
+print(negbin_large_int)
+```
+
+# model comparison again 
+now it likes the models equally well, hmmm? (is there something where they just are equivalent or coincidence?)
+good thing is that we now do not get the crazy warnings that we got from the zero-inflated poisson
+
+```{r}
+
+negbin_large_main <- add_criterion(negbin_large_main, "waic") #add_criterion(zip_large_main, "loo", moment_match = TRUE)
+negbin_large_int <- add_criterion(negbin_large_main, "waic") #add_criterion(zip_large_int, "loo", moment_match = TRUE)
+
+# compare the WAIC estimates
+w <- loo_compare(negbin_large_main, negbin_large_int,
+                 criterion = "waic")
+
+print(w)
+
+# 100% weight for main model 
+model_weights(negbin_large_main, negbin_large_int, 
+              weights = "waic") %>% 
+  round(digits = 2)
+
+```
+
+## model comparison across ## 
+Really does not like the zero-inflated poisson, 
+but like the main-effects & the interaction effects equally well 
+
+```{r}
+
+zip_large_main <- add_criterion(zip_large_main, "loo", moment_match = TRUE)
+zip_large_int <- add_criterion(zip_large_int, "loo", moment_match = TRUE)
+negbin_large_main <- add_criterion(negbin_large_main, "loo", moment_match = TRUE)
+negbin_large_int <- add_criterion(negbin_large_int, "loo", moment_match = TRUE)
+
+# compare the WAIC estimates
+w <- loo_compare(zip_large_main, zip_large_int, negbin_large_main, negbin_large_int,
+                 criterion = "loo")
+
+print(w)
+
+# 100% weight for main model 
+model_weights(zip_large_main, zip_large_int, negbin_large_main, negbin_large_int,
+              weights = "loo") %>% 
+  round(digits = 2)
+
+
+```
+## trying to understand the models ## 
+
+
+# check UCB data (should it be a factor or 1/0)?
+
+```{r}
+install.packages(c("coda","mvtnorm","devtools","loo","dagitty"))
+devtools::install_github("rmcelreath/rethinking")
+library(rethinking)
+data(UCBadmit)
+UCBd <- UCBadmit
+rm(UCBadmit)
+detach(package:rethinking, unload = T)
+library(brms)
+```
+```{r}
+UCBd %>% glimpse()
+```
+
+```{r}
+# his intercept is close to both (closer to median) -- but it is also for female right? we should go factor I think. 
+UCBd %>% summarize(admit_mean = mean(admit),
+                   admit_median = median(admit))
+```
+
+
+
+#### BELOW IS OLD ####
+
+### fit Poisson model ###
+
+### wrange data 
+
+```{r}
+
+# not sure whether we want log_teamsize, but we can experiment & ask Ric
+# ^ should be motivated by (1) theory and (2) plot 
+d <- d %>%
+  mutate(log_teamsize = log(n_authors),
+         condition_coded = ifelse(condition == "experimental", 1, 0),
+         c5_added = c_5 + 1)
+
+```
+
+```{r}
+
+# trying to trouble-shoot the problem below
+d %>% 
+  summarize(c5_min = min(c5_added),
+            c5_max = max(c5_added),
+            cond_min = min(condition_coded),
+            authors_min = min(n_authors),
+            days_min = min(days_after_2010)) %>%
+  glimpse()
+
+```
+
+## model 1 (main effects)
+### c_5 ~ 1 + condition_coded + n_authors + days_after_2010
+### NB: ask Riccardo about match group
+### think about actually reasonable priors
+
+```{r}
+
+# find the get_prior() function
+# normal(0, 1) for beta completely fucked Rhat, tried normal(0, 10) instead
+# I think (maybe) the issue is that I have 0s, which are log(0) = -inf
+# now I just added one as a test...  still does not work. 
+poisson_main <-
+  brm(data = d, family = poisson,
+      c5_added ~ 1 + condition_coded + n_authors + days_after_2010,
+      prior = c(prior(normal(0, 100), class = Intercept),
+                prior(normal(0, 1), class = b)),
+      iter = 3000, warmup = 1000, chains = 2, cores = 2,
+      seed = 10) 
+
+```
+
+### check model 
+### completely fucked
+
+```{r}
+
+print(poisson_main)
+
+```
+
+# try ZIP model
+## still get the log(0) issue & slow sampling
+
+```{r}
+
+f_small_main = bf(c_5 ~ 1 + condition_coded)
+f_large_main = bf(c_5 ~ 1 + condition_coded + n_authors + days_after_2010)
+
+```
+
+```{r}
+
+get_prior(
+  formula = f_small_main,
+  data = d,
+  family = zero_inflated_poisson(),
+)
+
+```
+
+
+```{r}
+
+# works now, but really no effect. 
+# could be just right or model could be weird
+# weird that est. error is so large for condition_coded or just me?
+# should it be 0/1 coded or be a factor somehow?
+zip_small_main <- 
+  brm(data = d, family = zero_inflated_poisson,
+      f_small_main,
+      prior = c(prior(normal(0, 10), class = Intercept),
+                prior(beta(2, 2), class = zi),  # the brms default is beta(1, 1)
+                prior(normal(0, 1), class = b)),  
+      cores = 4,
+      seed = 11) 
+
+```
+
+```{r}
+
+print(zip_small_main)
+
+```
+
+## large model, re-order the data (fucks up completely) ##
+
+```{r}
+
+# recode data (0/1 coded)
+d <- d %>%
+  mutate(teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
+         days_after_2010_scaled = days_after_2010/max(days_after_2010)) # because min = 0
+
+# check
+d %>% 
+  summarize(
+    teamsize_min = min(teamsize_scaled), 
+    teamsize_max = max(teamsize_scaled),
+    days_min = min(days_after_2010_scaled),
+    days_max = max(days_after_2010_scaled)
+  ) %>%
+  glimpse()
+
+```
+
+```{r}
+
+f_large_main = bf(c_5 ~ 1 + condition_coded + teamsize_scaled + days_after_2010_scaled)
+
+```
+
+
+```{r}
+
+# Rhat through the roof (before scaling our stuff to (0,1) range). 
+zip_large_main <- 
+  brm(data = d, family = zero_inflated_poisson,
+      f_large_main,
+      prior = c(prior(normal(0, 10), class = Intercept),
+                prior(beta(2, 2), class = zi),  # the brms default is beta(1, 1)
+                prior(normal(0, 1), class = b)),  
+      cores = 4,
+      seed = 11) 
+
+```
+
+```{r}
+
+# teamsize is really good (makes sense, should be the case)
+# days negative (less citations for newer articles, a bit weird maybe?)
+# extremely high est. error for condition (has to be something with coding as 0/1?)
+print(zip_large_main)
+
+```
+
+## interactions ## 
+
+
+## random effects ##
+
+
+## earlier experimental stuff ##
+
+### fit ZIP model (just intercept for one group) ###
 
 ```{r}
 
@@ -194,4 +573,5 @@ tibble(x = 0:100) %>%
   theme(plot.background = element_rect(fill = "grey92"))
 
 ```
+
 

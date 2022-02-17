@@ -22,7 +22,7 @@ p_load(tidyverse, brms, ggthemes)
 # set up cmdstanr 
 install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
 library(cmdstanr)
-install_cmdstan(cores = 2)
+install_cmdstan(cores = 2, overwrite = TRUE)
 
 
 ```
@@ -37,7 +37,8 @@ d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
          condition_coded = ifelse(condition == "experiment", 1, 0),
          condition_fct = as_factor(condition), 
          teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
-         days_after_2010_scaled = days_after_2010/max(days_after_2010)) %>% # because min = 0
+         days_after_2010_scaled = days_after_2010/max(days_after_2010),
+         id_fct = as_factor(PaperId)) %>% # because min = 0
   glimpse()
 
 ```
@@ -48,196 +49,226 @@ d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
 
 # main model & interaction model (fit both negative binomial & zero-inflated poisson)
 # just changed to factor now 
-f_large_main = bf(c_5 ~ 0 + condition_fct + teamsize_scaled + days_after_2010_scaled)
-f_large_int = bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + condition_fct:days_after_2010_scaled)
+f_team = bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled)
+f_delay = bf(c_5 ~ 0 + condition_fct + condition_fct:days_after_2010_scaled)
+f_large = bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + condition_fct:days_after_2010_scaled)
+f_var = bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + condition_fct:days_after_2010_scaled + (1|id_fct)) # does not work right now, priors?
 
 ```
 
 # get priors for zero-inflated poisson and negative binomial 
+# priors losely based on defaults & recoded (but could need more thouhgt). 
 
-## zero-inflated (both models): 
+## zero-inflated poisson (ZIP):
 class = b, 
 class = zi 
 
-## negative binomial (both models): 
+## negative binomial (NB):
 class = b,
 class = gamma
+
+## zero-inflated negative binomial: 
+class = b,
+class = zi, 
+class = gamma 
+
+## for the random intercept we also need class = sd 
 
 ```{r}
 
 get_prior(
-  formula = f_large_int,
+  formula = f_int,
   data = d,
   family = zero_inflated_poisson(),
 )
 
 get_prior(
-  formula = f_large_int, 
+  formula = f_int, 
   data = d, 
   family = negbinomial()
 )
 
-```
+get_prior(
+  formula = f_int,
+  data = d,
+  family = zero_inflated_negbinomial()
+)
 
-# fit models 
-
-# 1. zero-inflated poisson main-effects 
-
-```{r}
-
-# Rhat through the roof (before scaling our stuff to (0,1) range). 
-# very different from with intercept 
-# also weird that there is effect of days (if there was some I think it should be negative). 
-zip_large_main <- 
-  brm(data = d, family = zero_inflated_poisson,
-      f_large_main,
-      prior = c(prior(beta(2, 2), class = zi),  # the brms default is beta(1, 1)
-                prior(normal(0, 5), class = b)),  # very wide prior
-      cores = 4,
-      seed = 11) 
+get_prior(
+  formula = f_var,
+  data = d,
+  family = zero_inflated_poisson()
+)
 
 ```
 
+# function for fitting models 
+
 ```{r}
-print(zip_large_main)
+
+fit_model <- function(family, formula, prior){ 
+  
+  m <- brm(data = d, 
+           family = family, 
+           formula = formula,
+           prior = prior, 
+           cores = 4,
+           seed = 11,
+           backend = "cmdstanr")
+  return(m)
+  
+  }
+  
 ```
 
+# fit all the models 
+should probably save them 
 
-# 2. zero-inflated poisson interaction-effects
+```{r, include=FALSE}
 
-```{r}
+## ZIP models 
 
-zip_large_int <- 
-  brm(data = d, family = zero_inflated_poisson,
-      f_large_int,
-      prior = c(prior(beta(2, 2), class = zi),  # the brms default is beta(1, 1)
-                prior(normal(0, 5), class = b)),  # very wide prior
-      cores = 4,
-      seed = 11) 
+zip_prior_base <- c(prior(beta(2, 2), class = zi), # the brms default is beta(1, 1)
+                    prior(normal(0, 5), class = b))
+
+zip_main <- fit_model(
+  family = zero_inflated_poisson(), 
+  formula = f_main,
+  prior = zip_prior
+)
+
+zip_int <- fit_model(
+  family = zero_inflated_poisson(), 
+  formula = f_int,
+  prior = zip_prior
+)
+
+# just accept baseline prior for sd for now 
+zip_var <- fit_model(
+  family = zero_inflated_poisson(),
+  formula = f_var,
+  prior = zip_prior
+)
+
+## negative binomial models 
+
+negbin_prior <- c(prior(gamma(0.01, 0.01), class = shape), # default
+                  prior(normal(0, 5), class = b))
+
+negbin_main <- fit_model(
+  family = negbinomial(), 
+  formula = f_main,
+  prior = negbin_prior
+)
+
+negbin_int <- fit_model(
+  family = negbinomial(),
+  formula = f_int, 
+  prior = negbin_prior
+)
+
+# baseline priors for sd 
+negbin_var <- fit_model(
+  family = negbinomial(),
+  formula = f_var,
+  prior = negbin_prior
+)
+
+## zero-inflated negative binomial models 
+
+zinegbin_prior = c(prior(gamma(0.01, 0.01), class = shape),  # using the default
+                prior(normal(0, 5), class = b),
+                prior(beta(2, 2), class = zi))
+
+zinegbin_main <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_main,
+  prior = zinegbin_prior
+)
+
+zinegbin_int <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_int,
+  prior = zinegbin_prior
+)
+
+# baseline priors for sd 
+zinegbin_var <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_var,
+  prior = zinegbin_prior
+)
 
 ```
 
+## check basics ## 
 
 ```{r}
 
-# how to interpret? 
-# makes sense that condition:teamsize is positive & that condition:days negative (given plots) I think. 
-# notive that the effects (for interatctions) are very small here (because 0-1 scaling), I just do not get why condition_coded is so large. 
-print(zip_large_int)
+print(zip_main)
+print(zip_int)
+print(zip_var) # problematic Rhat, perhaps priors?
+print(negbin_main)
+print(negbin_int)
+print(negbin_var) # problematic Rhat, perhaps priors?
+print(zinegbin_main)
+print(zinegbin_int)
+print(zinegbin_var) # problematic Rhat, perhaps priors?
 
 ```
-## intermezzo: model comparison ## 
-have pareto K issue & main model much better than interaction here. 
+
+## check sampling ##
+
+.... 
+
+## model comparison ## 
+some issues with p_waic: can we tweak the models to make them better? 
+negative binomial appears to provide a slightly better fit than zero-inflated negative binomial. 
+we have to actually check how this looks.
 
 ```{r}
 
-zip_large_main <- add_criterion(zip_large_main, "loo", moment_match = TRUE)
-zip_large_int <- add_criterion(zip_large_int, "loo", moment_match = TRUE)
+# zip models need loo & moment match 
+zip_main <- add_criterion(zip_main, "waic") # loo instead, many p_waic issues
+zip_int <- add_criterion(zip_int, "waic") # loo instead, many p_waic issues
+negbin_main <- add_criterion(negbin_main, "waic") # no issues 
+negbin_int <- add_criterion(negbin_int, "waic") # 1 issue with p_waic
+zinegbin_main <- add_criterion(zinegbin_main, "waic") # 1 issue with p_waic
+zinegbin_int <- add_criterion(zinegbin_int, "waic") # 1 issue with p_waic
 
 # compare the WAIC estimates
-w <- loo_compare(zip_large_main, zip_large_int,
-                 criterion = "loo")
-
-print(w)
-
-# 100% weight for main model 
-model_weights(zip_large_main, zip_large_int, 
-              weights = "loo") %>% 
-  round(digits = 2)
-
-```
-
-
-# 3. main effects negative binomial 
-
-```{r}
-
-# Rhat through the roof (before scaling our stuff to (0,1) range). 
-# very different from with intercept 
-# also weird that there is effect of days (if there was some I think it should be negative). 
-negbin_large_main <- 
-  brm(data = d, family = negbinomial,
-      f_large_main,
-      prior = c(prior(gamma(0.01, 0.01), class = shape),  # using the default
-                prior(normal(0, 5), class = b)),  # very wide prior
-      cores = 4,
-      seed = 11) 
-
-```
-
-```{r}
-
-# really large effect of teamsize now (should make sense?)
-print(negbin_large_main)
-
-```
-# 4. negative binomial with interaction 
-
-```{r}
-
-negbin_large_int <- 
-  brm(data = d, family = negbinomial,
-      f_large_int,
-      prior = c(prior(gamma(0.01, 0.01), class = shape),  # using the default
-                prior(normal(0, 5), class = b)),  # very wide prior
-      cores = 4,
-      seed = 11) 
-
-```
-
-```{r}
-# seems like the interaction forces condition_coded to matter a lot (which is slightly weird) 
-print(negbin_large_int)
-```
-
-# model comparison again 
-now it likes the models equally well, hmmm? (is there something where they just are equivalent or coincidence?)
-good thing is that we now do not get the crazy warnings that we got from the zero-inflated poisson
-
-```{r}
-
-negbin_large_main <- add_criterion(negbin_large_main, "waic") #add_criterion(zip_large_main, "loo", moment_match = TRUE)
-negbin_large_int <- add_criterion(negbin_large_main, "waic") #add_criterion(zip_large_int, "loo", moment_match = TRUE)
-
-# compare the WAIC estimates
-w <- loo_compare(negbin_large_main, negbin_large_int,
+w <- loo_compare(zip_main, 
+                 zip_int, 
+                 negbin_main, 
+                 negbin_int,
+                 zinegbin_main,
+                 zinegbin_int,
                  criterion = "waic")
 
 print(w)
 
-# 100% weight for main model 
-model_weights(negbin_large_main, negbin_large_int, 
+# check model weights 
+model_weights(zip_main, 
+              zip_int, 
+              negbin_main, 
+              negbin_int,
+              zinegbin_main,
+              zinegbin_int,
               weights = "waic") %>% 
   round(digits = 2)
 
 ```
 
-## model comparison across ## 
-Really does not like the zero-inflated poisson, 
-but like the main-effects & the interaction effects equally well 
-
-```{r}
-
-zip_large_main <- add_criterion(zip_large_main, "loo", moment_match = TRUE)
-zip_large_int <- add_criterion(zip_large_int, "loo", moment_match = TRUE)
-negbin_large_main <- add_criterion(negbin_large_main, "loo", moment_match = TRUE)
-negbin_large_int <- add_criterion(negbin_large_int, "loo", moment_match = TRUE)
-
-# compare the WAIC estimates
-w <- loo_compare(zip_large_main, zip_large_int, negbin_large_main, negbin_large_int,
-                 criterion = "loo")
-
-print(w)
-
-# 100% weight for main model 
-model_weights(zip_large_main, zip_large_int, negbin_large_main, negbin_large_int,
-              weights = "loo") %>% 
-  round(digits = 2)
+## check model 
+# exponentiate results to get count scale (because of log-link). 
+# check influential datapoints (Rethinking CH 11)
+# plot implications of prior & posterior. 
+# following CH 11 (oceanic tools) we should force intercept (i.e. zero authors to have zero citations) - i.e. pass through origin. 
 
 
-```
-## trying to understand the models ## 
 
+
+### below is old ###
 
 # check UCB data (should it be a factor or 1/0)?
 

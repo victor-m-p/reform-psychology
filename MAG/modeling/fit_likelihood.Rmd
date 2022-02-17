@@ -1,0 +1,366 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+# if first session on Ucloud
+
+```{r, include=FALSE}
+
+# consider pacman
+install.packages("pacman") 
+library(pacman)
+
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot)
+
+# set up cmdstanr 
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+
+
+```
+
+
+# load data
+
+```{r}
+
+# check data
+d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_coded = ifelse(condition == "experiment", 1, 0),
+         condition_fct = as_factor(condition), 
+         teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
+         days_after_2010_scaled = days_after_2010/max(days_after_2010),
+         id_fct = as_factor(PaperId)) %>% # because min = 0
+  glimpse()
+
+```
+
+## straight to main model (no random slopes yet though) ##
+
+```{r}
+
+# just simple model here
+## should teamsize also be a main effect?
+f_team = bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled)
+
+```
+
+# get priors for zero-inflated poisson and negative binomial 
+# priors losely based on defaults & recoded (but could need more thouhgt). 
+
+## zero-inflated poisson (ZIP):
+class = b, 
+class = zi 
+
+## negative binomial (NB):
+class = b,
+class = gamma
+
+## zero-inflated negative binomial: 
+class = b,
+class = zi, 
+class = gamma 
+
+## for the random intercept we also need class = sd 
+
+```{r}
+
+get_prior(
+  formula = f_team,
+  data = d,
+  family = zero_inflated_poisson(),
+)
+
+get_prior(
+  formula = f_team, 
+  data = d, 
+  family = negbinomial()
+)
+
+get_prior(
+  formula = f_team,
+  data = d,
+  family = zero_inflated_negbinomial()
+)
+
+
+```
+
+# function for fitting models 
+
+```{r}
+
+fit_model <- function(family, formula, prior, sample_prior, file, random_seed = 13){ 
+  
+  m <- brm(data = d, 
+           family = family, 
+           formula = formula,
+           prior = prior, 
+           sample_prior = sample_prior,
+           cores = 4,
+           chains = 2,
+           iter = 4000, 
+           warmup = 2000,
+           file = file,
+           file_refit = "on_change",
+           threads = threading(2),
+           seed = random_seed,
+           control = list(adapt_delta = .99, 
+                          max_treedepth = 20), 
+           backend = "cmdstanr")
+  return(m)
+  
+  }
+  
+```
+
+# sample only prior
+
+```{r, include=FALSE}
+
+## ZIP models 
+
+zip_prior <- c(prior(beta(2, 2), class = zi), # the brms default is beta(1, 1)
+                    prior(normal(0, 1), class = b))
+
+zip_team <- fit_model(
+  family = zero_inflated_poisson(), 
+  formula = f_team,
+  prior = zip_prior,
+  sample_prior = "only",
+  file = "models/zip_prior"
+)
+
+## negative binomial models 
+# 19 of 4000 (0.0%) transitions ended with a divergence (with stricter priors)
+
+negbin_prior <- c(prior(gamma(0.01, 0.01), class = shape), # default
+                  prior(normal(0, 1), class = b))
+
+negbin_team <- fit_model(
+  family = negbinomial(), 
+  formula = f_team,
+  prior = negbin_prior,
+  sample_prior = "only",
+  file = "models/negbin_prior"
+)
+
+
+## zero-inflated negative binomial models 
+# 1 of 4000 (0.0%) transitions ended with a divergence (with stricter priors)
+
+zinegbin_prior = c(prior(gamma(0.01, 0.01), class = shape),  # using the default
+                prior(normal(0, 1), class = b),
+                prior(beta(2, 2), class = zi))
+
+zinegbin_team <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_team,
+  prior = zinegbin_prior,
+  sample_prior = "only",
+  file = "models/zinegbin_prior"
+)
+
+```
+
+# fit models 
+
+```{r}
+
+zip_post <- fit_model(
+  family = zero_inflated_poisson(), 
+  formula = f_team,
+  prior = zip_prior,
+  sample_prior = TRUE,
+  file = "models/zip_post"
+)
+
+negbin_post <- fit_model(
+  family = negbinomial(), 
+  formula = f_team,
+  prior = negbin_prior,
+  sample_prior = TRUE,
+  file = "models/negbin_post"
+)
+
+zinegbin_post <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_team,
+  prior = zinegbin_prior,
+  sample_prior = TRUE,
+  file = "models/zinegbin_post"
+)
+
+```
+
+## check posterior ##
+https://mc-stan.org/bayesplot/articles/graphical-ppcs.html
+
+```{r}
+y <- d$c_5
+y_zip <- posterior_predict(zip_post, draws = 500)
+y_negbin <- posterior_predict(negbin_post, draws = 500)
+y_zinegbin <- posterior_predict(zinegbin_post, draws = 500)
+
+```
+
+# ZIP
+we see the key issue again here... 
+
+```{r}
+
+ppc_dens_overlay(y, y_zip[1:50, ]) + xlim(-1, 50)
+ppc_hist(y, y_zip[1:5, ]) + xlim(-1, 50)
+
+
+```
+
+# negbin  
+looks really good. 
+has a hard time figuring out the correct number of 0s. 
+
+```{r}
+
+ppc_dens_overlay(y, y_negbin[1:50, ]) + xlim(-1, 50)
+ppc_hist(y, y_negbin[1:5, ]) + xlim(-1, 50)
+#plot_grid(p1, p2, ncol = 1, align = 'v')
+
+```
+# zinegbin  
+looks really good. 
+very similar to negbin actually. 
+
+```{r}
+ppc_dens_overlay(y, y_zinegbin[1:50, ]) + xlim(-1, 50)
+ppc_hist(y, y_zinegbin[1:5, ]) + xlim(-1, 50)
+#plot_grid(p1, p2, ncol = 1, align = 'v')
+```
+## plt traces ##
+reasonable for negative binomial and for zero-inflated negative binomial 
+
+```{r}
+
+plot(zip_post) # gives weird stuff 
+plot(negbin_post) # much more reasonable
+plot(zinegbin_post) # also reasonable 
+
+```
+## more PPC 
+
+# number of zeros (they all do a good job)
+
+```{r}
+prop_zero <- function(x) mean(x == 0)
+```
+
+
+```{r}
+
+ppc_stat(y, y_zip, stat = "prop_zero", binwidth = 0.005)
+ppc_stat(y, y_negbin, stat = "prop_zero", binwidth = 0.005)
+ppc_stat(y, y_zinegbin, stat = "prop_zero", binwidth = 0.005)
+
+```
+# predicting max 
+not sure what to make of this
+
+```{r}
+
+ppc_stat(y, y_zip, stat = "max")
+ppc_stat(y, y_negbin, stat = "max")
+ppc_stat(y, y_zinegbin, stat = "max")
+```
+# by group
+They all predict "too much" of the same for each group (although might be good that they are more sceptical).
+Best model seems to be the negative binomial. 
+
+```{r}
+
+ppc_stat_grouped(y, y_zip, group = d$condition_fct, stat = "prop_zero") # predicts same for groups 
+ppc_stat_grouped(y, y_negbin, group = d$condition_fct, stat = "prop_zero")
+ppc_stat_grouped(y, y_zinegbin, group = d$condition_fct, stat = "prop_zero")
+
+```
+# check summary
+Only "interesting" thing here is that large teamsize seems to have a stronger effect for replication studies. 
+Do people value the ManyLabs & large-scale replication efforts more? 
+Could be suggested from this (& to be fair, there has been a lot of attention). 
+
+```{r}
+summary(zip_post)
+summary(negbin_post)
+summary(zinegbin_post)
+```
+
+## plot predictions of model ## 
+
+```{r}
+install.packages("tidybayes")
+library(tidybayes)
+```
+
+```{r}
+install.packages("modelr")
+library(modelr)
+```
+
+# plot model fit
+NB: 
+(1) effect of interaction probably driven by the one outlier (more data and/or robust model?). 
+(2) could also consider doing something else  to teamsize (e.g. log) - would make sense that it is not a linear relationship.
+(3) also consider what McElreath does with forcing it through origin. 
+
+https://mjskay.github.io/tidybayes/reference/add_predicted_draws.html
+
+```{r}
+
+d %>%
+  group_by(condition_fct) %>%
+  data_grid(teamsize_scaled = seq_range(teamsize_scaled, n = 101)) %>%
+  add_epred_draws(negbin_post, ndraws = 100) %>% # same as fitted 
+  ggplot(aes(x = teamsize_scaled, y = c_5, color = ordered(condition_fct))) +
+  geom_line(aes(y = .epred, group = paste(condition_fct, .draw)), alpha = 0.25) +
+  geom_point(data = d)
+
+```
+
+```{r}
+
+d %>%
+  group_by(condition_fct) %>%
+  data_grid(teamsize_scaled = seq_range(teamsize_scaled, n = 101)) %>%
+  add_epred_draws(negbin_post) %>% # same as fitted 
+  ggplot(aes(x = teamsize_scaled, y = c_5, color = ordered(condition_fct))) +
+  stat_lineribbon(aes(y = .epred), .width = c(.99, .95, .8, .5), alpha = 0.25) +
+  geom_point(data = d) + 
+  scale_fill_brewer(palette = "Greys")
+
+```
+
+```{r}
+
+# does a poor job predicting (but makes sense that 0 is always the value to predict...)
+d %>%
+  group_by(condition_fct) %>%
+  data_grid(teamsize_scaled = seq_range(teamsize_scaled, n = 101)) %>%
+  add_predicted_draws(negbin_post) %>% # same as fitted 
+  ggplot(aes(x = teamsize_scaled, y = c_5, color = ordered(condition_fct))) +
+  stat_lineribbon(aes(y = .prediction), .width = c(.99, .95, .8, .5), alpha = 0.25) +
+  geom_point(data = d) + 
+  scale_fill_brewer(palette = "Greys")
+```
+
+```{r}
+d %>%
+  group_by(condition_fct) %>%
+  data_grid(teamsize_scaled = seq_range(teamsize_scaled, n = 101)) %>%
+  add_linpred_draws(negbin_post) %>% # same as fitted 
+  ggplot(aes(x = teamsize_scaled, y = c_5, color = ordered(condition_fct))) +
+  stat_lineribbon(aes(y = .linpred), .width = c(.99, .95, .8, .5), alpha = 0.25) +
+  geom_point(data = d) + 
+  scale_fill_brewer(palette = "Greys")
+```
+

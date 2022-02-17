@@ -1,0 +1,50 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+# install/read packages and source functions from fun_helper.R
+
+```{r}
+
+# consider pacman
+install.packages("pacman") 
+library(pacman)
+
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot)
+
+# set up cmdstanr 
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+
+source(fun_helper)
+
+```
+
+# read data
+
+```{r}
+
+# check data
+d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_coded = ifelse(condition == "experiment", 1, 0),
+         condition_fct = as_factor(condition), 
+         teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
+         days_after_2010_scaled = days_after_2010/max(days_after_2010),
+         id_fct = as_factor(PaperId)) %>% # because min = 0
+  glimpse()
+
+```
+
+# models (just focusing on negative binomial here). 
+
+```{r}
+
+# just simple model here
+f_simple <- bf(c_5 ~ 0 + condition_fct + (1|))
+f_team <- bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + (1|condition_fct))
+
+```
+

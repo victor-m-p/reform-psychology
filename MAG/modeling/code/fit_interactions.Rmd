@@ -1,30 +1,32 @@
 ---
-title: "Untitled"
+title: "fit interactions"
+author: "Victor Møller Poulsen"
 output: html_document
 ---
 
 # install/read packages and source functions from fun_helper.R
 
-```{r}
+```{r, include=FALSE}
 
 # consider pacman
 install.packages("pacman") 
 library(pacman)
 
-p_load(tidyverse, brms, ggthemes, bayesplot, cowplot)
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
 
 # set up cmdstanr 
 install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
 library(cmdstanr)
 install_cmdstan(cores = 2, overwrite = TRUE)
 
-source(fun_helper)
+setwd("/work/50114/MAG/modeling/code")
+source("fun_helper.R")
 
 ```
 
 # read data
 
-```{r}
+```{r, include=FALSE}
 
 # check data
 d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
@@ -39,12 +41,280 @@ d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
 ```
 
 # models (just focusing on negative binomial here). 
+## (1) does intercept make sense when we only have one obs. in each category?
+## (2) should the random effect be on the "control + experiment" group? 
+## (3) random slopes out of the window, right (since we are not tracking studies over time)...
 
 ```{r}
 
-# just simple model here
-f_simple <- bf(c_5 ~ 0 + condition_fct + (1|))
-f_team <- bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + (1|condition_fct))
+# just simple model here (still ignoring days)
+f_baseline <- bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled) 
+f_team_int <- bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + (1|id_fct))
+f_team_full <- bf(c_5 ~ 0 + condition_fct * teamsize_scaled + (1|id_fct))
+f_team_days <- bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + condition_fct:days_after_2010_scaled + (1|id_fct))
+
+```
+
+# get prior 
+## running both negative binomial and zero-inflated
+
+```{r, include=FALSE}
+
+get_prior(
+  formula = f_baseline,
+  data = d,
+  family = negbinomial()
+)
+
+get_prior(
+  formula = f_baseline,
+  data = d,
+  family = zero_inflated_negbinomial()
+)
+
+get_prior(
+  formula = f_team_int,
+  data = d,
+  family = negbinomial()
+)
+
+get_prior(
+  formula = f_team_int,
+  data = d,
+  family = zero_inflated_negbinomial()
+)
+
+get_prior(
+  formula = f_team_full,
+  data = d,
+  family = negbinomial()
+)
+
+get_prior(
+  formula = f_team_full,
+  data = d,
+  family = zero_inflated_negbinomial()
+)
+
+get_prior(
+  formula = f_team_days,
+  data = d,
+  family = negbinomial()
+)
+
+get_prior(
+  formula = f_team_days,
+  data = d,
+  family = zero_inflated_negbinomial()
+)
+
+```
+
+# set priors 
+
+```{r}
+
+# negbin baseline
+negbin_baseline <- c(prior(gamma(0.01, 0.01), class = shape), 
+                     prior(normal(0, 1), class = b))
+
+# zinegbin baseline
+zinegbin_baseline = c(prior(gamma(0.01, 0.01), class = shape), 
+                      prior(normal(0, 1), class = b),
+                      prior(beta(2, 2), class = zi))
+
+# can be used for all interactions (without thinking)
+negbin_interaction <- c(prior(gamma(0.01, 0.01), class = shape), 
+                     prior(normal(0, 1), class = b),
+                     prior(normal(0, 1), class = sd)) # a wild guess
+
+# can be used for all interactions (without thinking)
+zinegbin_interaction = c(prior(gamma(0.01, 0.01), class = shape), 
+                      prior(normal(0, 1), class = b),
+                      prior(beta(2, 2), class = zi),
+                      prior(normal(0, 1), class = sd))
+
+
+
+```
+
+# fit prior models 
+
+```{r, include=FALSE}
+
+## baseline 
+negbin_prior_baseline <- fit_model(
+  family = negbinomial(), 
+  formula = f_baseline,
+  prior = negbin_baseline,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/negbin_prior_baseline"
+)
+
+zinegbin_prior_baseline <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_baseline,
+  prior = zinegbin_baseline,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/zinegbin_prior_baseline"
+)
+
+## teamsize interaction
+negbin_prior_team_int <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_int,
+  prior = negbin_interaction,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/negbin_prior_team_int"
+)
+
+zinegbin_prior_team_int <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_team_int,
+  prior = zinegbin_interaction,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/zinegbin_prior_team_int"
+)
+
+## teamsize main + interaction
+negbin_prior_team_full <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_full,
+  prior = negbin_interaction,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/negbin_prior_team_full"
+)
+
+zinegbin_prior_team_full <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_team_full,
+  prior = zinegbin_interaction,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/zinegbin_prior_team_full"
+)
+
+## both interactions 
+negbin_prior_team_days <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_days,
+  prior = negbin_interaction,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/negbin_prior_team_days"
+)
+
+zinegbin_prior_team_days <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_team_days,
+  prior = zinegbin_interaction,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/zinegbin_prior_team_days"
+)
+
+```
+
+# check priors (before sampling everything)
+we do have some divergences here, but it looks ok to me. 
+
+```{r}
+
+prior_check <- function(model, ndraws, title, xmax){
+  
+  pp_check(model, 
+           ndraws = ndraws) +
+    labs(title = title) + 
+    theme_minimal() + 
+    xlim(0, xmax)
+  
+} 
+
+```
+
+```{r}
+
+prior_check(negbin_prior_baseline, 100, "negative binomial baseline (x cutoff: 25)", 25)
+prior_check(zinegbin_prior_baseline, 100, "zi-negative binomial baseline (x cutoff: 25)", 25)
+prior_check(negbin_prior_team_int, 100, "negative binomial team int (x cutoff: 25)", 25)
+prior_check(zinegbin_prior_team_int, 100, "zi-negative binomial team int (x cutoff: 25", 25)
+prior_check(negbin_prior_team_full, 100, "negative binomial team full (x cutoff: 25)", 25)
+prior_check(zinegbin_prior_team_full, 100, "zi-negative binomial team full (x cutoff: 25)", 25)
+prior_check(negbin_prior_team_days, 100, "negative binomial team & days interaction (x cutoff 25)", 25)
+prior_check(zinegbin_prior_team_days, 100, "zi-negative binomial team & days interaction (x cutoff 25)", 25)
+
+```
+
+# fit actual models 
+
+```{r}
+
+
+## baseline 
+negbin_post_baseline <- fit_model(
+  family = negbinomial(), 
+  formula = f_baseline,
+  prior = negbin_baseline,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/negbin_post_baseline"
+)
+
+zinegbin_post_baseline <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_baseline,
+  prior = zinegbin_baseline,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/zinegbin_post_baseline"
+)
+
+## teamsize interaction
+negbin_post_team_int <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_int,
+  prior = negbin_interaction,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/negbin_post_team_int"
+)
+
+zinegbin_post_team_int <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_team_int,
+  prior = zinegbin_interaction,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/zinegbin_post_team_int"
+)
+
+## teamsize main + interaction
+negbin_post_team_full <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_full,
+  prior = negbin_interaction,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/negbin_post_team_full"
+)
+
+zinegbin_post_team_full <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_team_full,
+  prior = zinegbin_interaction,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/zinegbin_post_team_full"
+)
+
+## both interactions 
+negbin_post_team_days <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_days,
+  prior = negbin_interaction,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/negbin_post_team_days"
+)
+
+zinegbin_post_team_days <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_team_days,
+  prior = zinegbin_interaction,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/zinegbin_post_team_days"
+)
+
 
 ```
 

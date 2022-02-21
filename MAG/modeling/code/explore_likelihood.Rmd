@@ -1,5 +1,6 @@
 ---
-title: "Untitled"
+title: "explore likelihood"
+author: "Victor Møller Poulsen"
 output: html_document
 ---
 
@@ -47,7 +48,6 @@ negbin_prior <- readRDS("/work/50114/MAG/modeling/models/negbin_prior.rds")
 negbin_post <- readRDS("/work/50114/MAG/modeling/models/negbin_post.rds")
 zinegbin_prior <- readRDS("/work/50114/MAG/modeling/models/zinegbin_prior.rds")
 zinegbin_post <- readRDS("/work/50114/MAG/modeling/models/zinegbin_post.rds")
-
 
 ```
 
@@ -316,3 +316,5 @@ loo_model_weights(zip_post,
 
 ```
 
+# Check influential observations (pareto k) 
+## check recoded (of rethinking)

@@ -20,7 +20,7 @@ setwd("/work/50114/MAG/modeling/code")
 source("fun_helper.R")
 ```
 
-```{r, include=FALSE}
+```{r}
 
 # check data
 d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
@@ -40,7 +40,7 @@ Trying to troubleshoot whether it is related to intercept &
 I think that (0 + Intercept) syntax is actually more appropriate 
 since it does not assume mean centering (something like that). 
 
-```{r, include=FALSE}
+```{r}
 
 f_team_0 <- bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + (1|id_fct))
 f_team_1 <- bf(c_5 ~ 1 + condition_fct + condition_fct:teamsize_scaled + (1|id_fct))
@@ -201,7 +201,7 @@ negbin_post_01 <- fit_model(
 
 # some auto-correlation
 # effect almost entirely in random effect
-plot(negbin_post_0)
+plot(negbin_post_0, N = 3)
 
 ```
 
@@ -210,14 +210,14 @@ plot(negbin_post_0)
 
 # some auto-correlation
 # effect almost entirely in random effect
-plot(negbin_post_1)
+plot(negbin_post_1, N = 3)
 
 ```
 
 ```{r}
 
 # same issues 
-plot(negbin_post_01)
+plot(negbin_post_01, N = 3)
 
 ```
 
@@ -329,20 +329,20 @@ Looks MUCH better now than before.
 ```{r}
 
 # looks pretty good. 
-plot(negbin_post_match_0)
+plot(negbin_post_match_0, N = 3)
 
 ```
 
 ```{r}
 
 # same as above 
-plot(negbin_post_match_1)
+plot(negbin_post_match_1, N = 3)
 ```
 
 ```{r}
 
 # slightly different: might be more appropriate? 
-plot(negbin_post_match_01)
+plot(negbin_post_match_01, N = 3)
 
 ```
 

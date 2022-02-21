@@ -24,7 +24,7 @@ source("fun_helper.R")
 
 # data
 
-```{r, include=FALSE}
+```{r}
 
 d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
   mutate(log_teamsize = log(n_authors), 
@@ -39,13 +39,11 @@ d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
 
 ```
 
-Different ways of specifying something similar. 
-We had issues with model (f_team_0) earlier. 
-Trying to troubleshoot whether it is related to intercept & 
-I think that (0 + Intercept) syntax is actually more appropriate 
-since it does not assume mean centering (something like that). 
+# model formulae
+same model-specifications as test_interactions2.
+just differs by being log of teamsize rather than 0-1 scaling. 
 
-```{r, include=FALSE}
+```{r}
 
 f_logteam_0 <- bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_log + (1|id_match))
 f_logteam_1 <- bf(c_5 ~ 1 + condition_fct + condition_fct:teamsize_log + (1|id_match))
@@ -136,53 +134,56 @@ prior_check <- function(model, ndraws, title, xmax){
 
 ```{r}
 
-prior_check(negbin_prior_0, 100, "No Intercept (x cutoff: 25)", 25)
-prior_check(negbin_prior_1, 100, "Intercept (x cutoff: 25)", 25)
-prior_check(negbin_prior_01, 100, "0 + Intercept (x cutoff: 25)", 25)
+prior_check(negbin_prior_log_0, 100, "No Intercept (x cutoff: 25)", 25)
+prior_check(negbin_prior_log_1, 100, "Intercept (x cutoff: 25)", 25)
+prior_check(negbin_prior_log_01, 100, "0 + Intercept (x cutoff: 25)", 25)
 
 ```
 
 # fit models 
+more pareto k than in the non-log-transformed?
+still fewest in the 0 + Intercept model. 
 
 ```{r}
 
 ## baseline 
-negbin_post_0 <- fit_model(
+negbin_post_log_0 <- fit_model(
   family = negbinomial(), 
-  formula = f_team_0,
+  formula = f_logteam_0,
   prior = negbin_0,
   sample_prior = TRUE,
-  file = "/work/50114/MAG/modeling/models/negbin_post_0"
+  file = "/work/50114/MAG/modeling/models/negbin_post_log_0"
 )
 
 ## baseline 
-negbin_post_1 <- fit_model(
+negbin_post_log_1 <- fit_model(
   family = negbinomial(), 
-  formula = f_team_1,
+  formula = f_logteam_1,
   prior = negbin_1,
   sample_prior = TRUE,
-  file = "/work/50114/MAG/modeling/models/negbin_post_1"
+  file = "/work/50114/MAG/modeling/models/negbin_post_log_1"
 )
 
 ## baseline 
-negbin_post_01 <- fit_model(
+negbin_post_log_01 <- fit_model(
   family = negbinomial(), 
-  formula = f_team_01,
+  formula = f_logteam_01,
   prior = negbin_01,
   sample_prior = TRUE,
-  file = "/work/50114/MAG/modeling/models/negbin_post_01"
+  file = "/work/50114/MAG/modeling/models/negbin_post_log_01"
 )
 
 
 ```
 
 # check traces
+looks ok. 
 
 ```{r}
 
 # some auto-correlation
 # effect almost entirely in random effect
-plot(negbin_post_0)
+plot(negbin_post_log_0, N = 3)
 
 ```
 
@@ -191,154 +192,26 @@ plot(negbin_post_0)
 
 # some auto-correlation
 # effect almost entirely in random effect
-plot(negbin_post_1)
+plot(negbin_post_log_1, N = 3)
 
 ```
 
 ```{r}
 
 # same issues 
-plot(negbin_post_01)
-
-```
-
-Seems like the issue is not the particular specification: 
-This post explains why it is problematic to have random effect for single observation: 
-https://stats.stackexchange.com/questions/242821/how-will-random-effects-with-only-1-observation-affect-a-generalized-linear-mixe
-
-# Try with random effect per group (i.e. experiment + control) 
-
-## create the variable (as factor)
-
-```{r}
-
-d <- d %>%
-  mutate(id_match = as_factor(match_group))
-
-```
-
-# new model formulae
-
-```{r}
-
-f_team_match_0 <- bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + (1|id_match))
-f_team_match_1 <- bf(c_5 ~ 1 + condition_fct + condition_fct:teamsize_scaled + (1|id_match))
-f_team_match_01 <- bf(c_5 ~ 0 + Intercept + condition_fct + condition_fct:teamsize_scaled + (1|id_match))
-
-```
-
-# prior 
-
-```{r}
-
-## baseline 
-negbin_prior_match_0 <- fit_model(
-  family = negbinomial(), 
-  formula = f_team_match_0,
-  prior = negbin_0, # same prior 
-  sample_prior = "only",
-  file = "/work/50114/MAG/modeling/models/negbin_prior_match_0"
-)
-
-## baseline 
-negbin_prior_match_1 <- fit_model(
-  family = negbinomial(), 
-  formula = f_team_match_1,
-  prior = negbin_1,
-  sample_prior = "only",
-  file = "/work/50114/MAG/modeling/models/negbin_prior_match_1"
-)
-
-## baseline 
-negbin_prior_match_01 <- fit_model(
-  family = negbinomial(), 
-  formula = f_team_match_01,
-  prior = negbin_01,
-  sample_prior = "only",
-  file = "/work/50114/MAG/modeling/models/negbin_prior_match_01"
-)
-
-```
-
-# prior check 
-A few divergent transitions (for all of them, between 7-9/4000)
-
-```{r}
-
-prior_check(negbin_prior_0, 100, "No Intercept (x cutoff: 25)", 25)
-prior_check(negbin_prior_1, 100, "Intercept (x cutoff: 25)", 25)
-prior_check(negbin_prior_01, 100, "0 + Intercept (x cutoff: 25)", 25)
-
-```
-
-# fit models 
-a few pareto_k > 0.7 (but few compared to above). 
-
-```{r}
-## baseline 
-negbin_post_match_0 <- fit_model(
-  family = negbinomial(), 
-  formula = f_team_match_0,
-  prior = negbin_0,
-  sample_prior = TRUE,
-  file = "/work/50114/MAG/modeling/models/negbin_post_match_0"
-)
-
-## baseline 
-negbin_post_match_1 <- fit_model(
-  family = negbinomial(), 
-  formula = f_team_match_1,
-  prior = negbin_1,
-  sample_prior = TRUE,
-  file = "/work/50114/MAG/modeling/models/negbin_post_match_1"
-)
-
-## baseline 
-negbin_post_match_01 <- fit_model(
-  family = negbinomial(), 
-  formula = f_team_match_01,
-  prior = negbin_01,
-  sample_prior = TRUE,
-  file = "/work/50114/MAG/modeling/models/negbin_post_match_01"
-)
-
-```
-
-# traces
-Looks MUCH better now than before. 
-
-```{r}
-
-# looks pretty good. 
-plot(negbin_post_match_0)
-
-```
-
-```{r}
-
-# same as above 
-plot(negbin_post_match_1)
-```
-
-```{r}
-
-# slightly different: might be more appropriate? 
-plot(negbin_post_match_01)
+plot(negbin_post_log_01, N = 3)
 
 ```
 
 # check estimates
-More effective samples for intercept models.
-No Rhat issues, looks pretty good. 
-Not strictly "significant" given 95% CI, but close -- 
-and also stronger effect of teamsize (although problematic because of outlier) --
-connected with the pareto k issue. 
+Fewer effective samples for the log model than non-log (test_interactions2). 
+Again, also fewer samples for the non-intercept model. 
 
 ```{r}
 
-print(negbin_post_match_0)
-print(negbin_post_match_1) # more effective samples 
-print(negbin_post_match_01) 
+print(negbin_post_log_0) 
+print(negbin_post_log_1) # by far the highest number of effective samples 
+print(negbin_post_log_01) 
 
 ```
 
@@ -347,14 +220,15 @@ print(negbin_post_match_01)
 ```{r}
 
 y <- d$c_5
-y_0 <- posterior_predict(negbin_post_match_0, draws = 500)
-y_1 <- posterior_predict(negbin_post_match_1, draws = 500)
-y_01 <- posterior_predict(negbin_post_match_01, draws = 500)
+y_0 <- posterior_predict(negbin_post_log_0, draws = 500)
+y_1 <- posterior_predict(negbin_post_log_1, draws = 500)
+y_01 <- posterior_predict(negbin_post_log_01, draws = 500)
 
 ```
 
 ## no intercept 
 looks pretty good. 
+Does overestimate number of 1, and underestimate number of 2 & 3 a bit (always does) -- perhaps zero-inflated better?
 a lot of uncertainty around 0 and 1 still. 
 
 ```{r}
@@ -382,13 +256,17 @@ ppc_hist(y, y_01[1:5, ]) + xlim(-1, 50)
 https://bookdown.org/content/4857/monsters-and-mixtures.html
 
 ## no intercept 
-mainly studies that are (relatively) low teamsize and high citation
+Mainly studies that are (relatively) low teamsize and high citation.
+Also, several control studies that are the same (c_5 = 77, teamsize_log = 0.693, condition = control). 
+Really need to fix this in the preprocessing. 
+But here, we basically get that all studies with many citations are influential...
+
 ```{r}
 
 d %>% 
-  mutate(k = negbin_post_match_0$criteria$loo$diagnostics$pareto_k) %>% 
+  mutate(k = negbin_post_log_0$criteria$loo$diagnostics$pareto_k) %>% 
   filter(k > .7) %>% 
-  select(c_5, teamsize_scaled, condition_fct, id_match, k)
+  select(c_5, teamsize_log, condition_fct, id_match, k)
 
 ```
 
@@ -398,18 +276,17 @@ some of the same here, mainly studies with high c_5 and low teamsize.
 ```{r}
 
 d %>% 
-  mutate(k = negbin_post_match_1$criteria$loo$diagnostics$pareto_k) %>% 
+  mutate(k = negbin_post_log_1$criteria$loo$diagnostics$pareto_k) %>% 
   filter(k > .7) %>% 
-  select(c_5, teamsize_scaled, condition_fct, id_match, k)
+  select(c_5, teamsize_log, condition_fct, id_match, k)
 
 ```
 
 
 ## 0 + Intercept 
-Seems to handle influential observations much better.
-Good explanation for all of the outliers: 
-(1) the two control studies are high influence because they are the same (fix earlier in pipeline)
-(2) the experiment study is high influence because there are very few studies with high teamsize (could do log-transformation) and the corresponding control study has zero citations... so this has an outsize influence on the interaction with condition and teamsize. 
+Seems to handle influential observations a bit better.
+Still issue with the repeated value as above & some "experiment"-condition.
+Primarily those with high c_5. 
 
 ```{r}
 
@@ -417,9 +294,9 @@ Good explanation for all of the outliers:
 # the outlier study (experiment) which is max in teamsize and also extremely high citation
 # whereas the 
 d %>% 
-  mutate(k = negbin_post_match_01$criteria$loo$diagnostics$pareto_k) %>% 
+  mutate(k = negbin_post_log_01$criteria$loo$diagnostics$pareto_k) %>% 
   filter(k > .7) %>% 
-  select(c_5, teamsize_scaled, condition_fct, id_match, k)
+  select(c_5, teamsize_log, condition_fct, id_match, k)
 
 ```
 
@@ -429,13 +306,13 @@ Do we know why that is?
 
 ```{r}
 
-loo_compare(negbin_post_match_0,
-            negbin_post_match_1,
-            negbin_post_match_01)
+loo_compare(negbin_post_log_0,
+            negbin_post_log_1,
+            negbin_post_log_01)
 
-loo_model_weights(negbin_post_match_0,
-                  negbin_post_match_1,
-                  negbin_post_match_01)
+loo_model_weights(negbin_post_log_0,
+                  negbin_post_log_1,
+                  negbin_post_log_01)
 ```
 
 

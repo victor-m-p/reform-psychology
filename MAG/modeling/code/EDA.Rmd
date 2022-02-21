@@ -18,7 +18,7 @@ p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
 
 # load data & mutate new columns
 
-```{r, include = FALSE}
+```{r}
 
 # mutate new columns
 d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%

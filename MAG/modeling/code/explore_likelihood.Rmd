@@ -4,8 +4,6 @@ author: "Victor Møller Poulsen"
 output: html_document
 ---
 
-# if first session on Ucloud
-
 ```{r, include=FALSE}
 
 # consider pacman
@@ -94,9 +92,9 @@ reasonable for negative binomial and for zero-inflated negative binomial
 
 ```{r}
 
-plot(zip_post) # gives weird stuff 
-plot(negbin_post) # much more reasonable
-plot(zinegbin_post, N = 10) # also reasonable 
+plot(zip_post, N = 3) # gives weird stuff 
+plot(negbin_post, N = 3) # much more reasonable
+plot(zinegbin_post, N = 3) # also reasonable 
 
 ```
 

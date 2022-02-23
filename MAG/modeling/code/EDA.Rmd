@@ -1,7 +1,9 @@
 ---
 title: "Quick EDA"
 author: "Victor Møller Poulsen"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # Load packages
@@ -12,7 +14,7 @@ output: html_document
 install.packages("pacman") 
 library(pacman)
 
-p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
+p_load(tidyverse, cowplot)
 
 ```
 
@@ -44,12 +46,31 @@ d %>% ggplot(aes(x = c_5)) +
 
 ```
 
+```{r}
+d %>% filter(c_5 <= 100) %>%
+  ggplot(aes(x = c_5)) + 
+  geom_histogram() + 
+  facet_wrap(vars(condition_fct))
+```
+
 
 # Check teamsize interaction with condition
 
+## raw 
+
+strong effect of teamsize,
+interaction probably driven by few data-points
+
+```{r}
+d %>% ggplot(aes(x = n_authors, y = c_5, color = condition_fct)) +
+  geom_point() + 
+  geom_smooth(method="lm")
+
+```
+
+
 ## log 
-surprising that there is no strong effect of teamsize. 
-still the effect is driven by outliers it seems 
+not sure whether this is more appropriate
 
 ```{r}
 
@@ -60,7 +81,7 @@ d %>% ggplot(aes(x = teamsize_log, y = c_5, color = condition_fct)) +
 ```
 
 ## 0-1 scaling
-The outlier induces a large effect which is unreasonable
+Same as original, just might be better for sampling. 
 
 ```{r}
 
@@ -79,7 +100,7 @@ There is just a main effect of teamsize & a (very slight) main effect of conditi
 d %>% filter(teamsize_log < 3.5) %>%
   ggplot(aes(x = teamsize_log, y = c_5, color = condition_fct)) + 
   geom_point() + 
-  geom_smooth(method="lm")
+  geom_smooth(method="lm") 
 
 ```
 

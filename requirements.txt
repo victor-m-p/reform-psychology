@@ -27,3 +27,4 @@ pytesseract
 opencv-python
 requests
 requests-oauthlib
+twarc

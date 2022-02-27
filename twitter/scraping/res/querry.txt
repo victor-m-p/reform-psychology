@@ -1,1 +1,0 @@
-"open science" OR "openscience" OR "reproducib" OR "preregist" OR "registered report" OR "replicab" 

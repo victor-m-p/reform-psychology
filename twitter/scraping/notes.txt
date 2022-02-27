@@ -1,0 +1,13 @@
+# on start-up
+source /work/50114/psyenv/bin/activate
+twarc2 configure # then paste bearer
+
+# for querry
+(1) might need: 
+pip install twarc -U 
+(2) very important to have "open science" rather than without quotes.
+
+# next steps
+check the data that we have & flatten it
+
+# run real stuff

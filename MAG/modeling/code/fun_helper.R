@@ -12,6 +12,7 @@ fit_model <- function(family, formula, prior, sample_prior, file, random_seed = 
            iter = 4000, 
            warmup = 2000,
            file = file,
+           save_pars = save_pars(all = TRUE),
            file_refit = "on_change",
            threads = threading(2),
            seed = random_seed,

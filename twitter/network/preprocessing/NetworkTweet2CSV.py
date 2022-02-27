@@ -1,5 +1,5 @@
 """
-usage: 
+usage: mm
 
 where to type from: 
     '/work/50114/twitter' 

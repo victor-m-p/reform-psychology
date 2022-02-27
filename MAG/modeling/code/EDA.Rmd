@@ -25,13 +25,9 @@ p_load(tidyverse, cowplot)
 # mutate new columns
 d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
   mutate(log_teamsize = log(n_authors), 
-         condition_coded = ifelse(condition == "experiment", 1, 0),
          condition_fct = as_factor(condition), 
-         teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
-         days_after_2010_scaled = days_after_2010/max(days_after_2010),
-         teamsize_log = log(n_authors),
-         id_match = as_factor(match_group), 
-         id_fct = as_factor(PaperId)) %>% # because min = 0
+         id_match = as_factor(match_group),
+         year_after_2010 = Year - 2010) %>% 
   glimpse()
 
 ```
@@ -62,7 +58,7 @@ strong effect of teamsize,
 interaction probably driven by few data-points
 
 ```{r}
-d %>% ggplot(aes(x = n_authors, y = c_5, color = condition_fct)) +
+d %>% ggplot(aes(x = log_teamsize, y = c_5, color = condition_fct)) +
   geom_point() + 
   geom_smooth(method="lm")
 
@@ -74,35 +70,13 @@ not sure whether this is more appropriate
 
 ```{r}
 
-d %>% ggplot(aes(x = teamsize_log, y = c_5, color = condition_fct)) +
+d %>% ggplot(aes(x = log_teamsize, y = c_5, color = condition_fct)) +
   geom_point() + 
-  geom_smooth(method="lm")
+  geom_smooth(method="lm") + 
+  ylim(0, 100)
 
 ```
 
-## 0-1 scaling
-Same as original, just might be better for sampling. 
-
-```{r}
-
-d %>% ggplot(aes(x = teamsize_scaled, y = c_5, color = condition_fct)) + 
-  geom_point() + 
-  geom_smooth(method="lm")
-
-```
-
-## log without the two highest points
-Clearly, no interaction effect of teamsize and condition. 
-There is just a main effect of teamsize & a (very slight) main effect of condition.
-
-```{r}
-
-d %>% filter(teamsize_log < 3.5) %>%
-  ggplot(aes(x = teamsize_log, y = c_5, color = condition_fct)) + 
-  geom_point() + 
-  geom_smooth(method="lm") 
-
-```
 
 # check days interaction
 Also clealy no interaction effect. 
@@ -112,9 +86,10 @@ Probably just want to control for this.
 ```{r}
 
 d %>% 
-  ggplot(aes(x = days_after_2010, y = c_5, color = condition_fct)) + 
+  ggplot(aes(x = Year, y = c_5, color = condition_fct)) + 
   geom_point() + 
-  geom_smooth(method="lm")
+  geom_smooth(method="lm") +
+  ylim(0, 100)
 
 ```
 

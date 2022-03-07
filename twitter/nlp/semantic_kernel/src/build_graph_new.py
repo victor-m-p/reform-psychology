@@ -1,3 +1,12 @@
+'''
+VMP 2022-03-07: 
+Edited version of CHCAA code. 
+
+NB: 
+* make it prettier / check styling options
+'''
+
+
 import os
 import argparse
 import numpy as np
@@ -39,7 +48,7 @@ def dist_prune(DELTA, pruning, prune=True):
     return DELTA
 
 
-def gen_graph(DELTA, labels, figname="nucleus_graph.png"):
+def gen_graph(DELTA, labels, figname, outpath):
     """ generate graph and plot from DELTA distance matrix
     - labels is list of node labels corresponding to columns/rows in DELTA
     """
@@ -57,14 +66,14 @@ def gen_graph(DELTA, labels, figname="nucleus_graph.png"):
     G.edge_attr.update(color="blue", width="2.0")
     G.node_attr.update(color="red", style="filled")
     G.draw(
-        os.path.join("fig", "graph_graphviz.png"),
+        os.path.join(f"{outpath}", "graph_graphviz.png"),
         format="png", prog="neato"
         )
 
     G = nx.from_numpy_matrix(DELTA)
     G = nx.relabel_nodes(G, dict(zip(range(len(G.nodes())), labels)))
     nx.draw(G, pos=pos, with_labels=True, node_size=100)
-    plt.savefig(os.path.join("fig", "graph_nx.png"))
+    plt.savefig(os.path.join(f"{outpath}", "graph_nx.png"))
     plt.close()
 
     np.random.seed(seed=1234)
@@ -124,10 +133,11 @@ def main():
     # new, for different types of data 
     datatype = args["type"]
 
-    outname = os.path.join("fig", f"g_cluster-{'-'.join(seeds).lower()}-{date.today()}-{datatype}-k{k}-m{m}-pruning-{pruning}.png")
-    gen_graph(DELTA, labels, figname=outname)
+    figname = os.path.join(f"/work/50114/twitter/fig/nlp/semantic_kernel/{datatype}", f"g_cluster-{'-'.join(seeds).lower()}-{date.today()}-{datatype}-k{k}-m{m}-pruning-{pruning}.png")
+    outpath = f"/work/50114/twitter/fig/nlp/semantic_kernel/{datatype}"
+    gen_graph(DELTA, labels, figname = figname, outpath = outpath)
 
-    print(f"{bcolors.OKGREEN}[INFO] writing graph to: {bcolors.ENDC}{bcolors.WARNING}{outname}{bcolors.ENDC}")
+    print(f"{bcolors.OKGREEN}[INFO] writing graph to: {bcolors.ENDC}{bcolors.WARNING}{figname}{bcolors.ENDC}")
 
 if __name__ == '__main__':
     main()

@@ -23,8 +23,8 @@ then
     echo "[INFO] training vectors..."
     python src/train_vectors.py \
         -i '/work/50114/twitter/data/nlp/semantic_kernel/bropenscience/lemma' \
-        -vo 'mdl/vectors_diplomat.pcl' \
-        -mo 'mdl/w2v_diplomat.pcl'
+        -vo 'mdl/vectors_bropenscience.pcl' \
+        -mo 'mdl/w2v_bropenscience.pcl'
 else
     echo "[INFO] using existing vectors"
 fi
@@ -36,12 +36,12 @@ do
     do
         echo "[INFO] Processing $seedls file..."
         echo "[INFO] Processing $associations file..."
-        python src/build_kernel_new.py --model mdl/vectors_diplomat.pcl --seed $seedls --association $associations --norm True
+        python src/build_kernel_new.py --model mdl/vectors_bropenscience.pcl --seed $seedls --association $associations --norm True
         
         for prunings in $PRUNINGS
         do
             echo "[INFO] Processing $prunings file..."
-            python src/build_graph_new.py --seed $seedls --type 'diplomat' --association $associations --pruning $prunings
+            python src/build_graph_new.py --seed $seedls --type 'bropenscience' --association $associations --pruning $prunings
             echo "-----"
 
         done 
@@ -49,4 +49,4 @@ do
 done
 
 # write all figures to comptessed file for download
-zip -r fig/figs.zip fig/
+zip -r /work/50114/twitter/fig/nlp/semantic_kernel/bropenscience.zip /work/50114/twitter/fig/nlp/semantic_kernel/bropenscience

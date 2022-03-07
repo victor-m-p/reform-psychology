@@ -1,22 +1,20 @@
-# Testing Querries: 
+# scraping 
 
-## "open science":
-catches e.g. #OpenScience
-catches Open and Science -- which means that we also get a lot of stuff that you contain those two..
+## on start-up
+source /work/50114/psyenv/bin/activate
+twarc2 configure # then paste bearer
 
-## '"open science" OR "openscience"'
-catches 'open science' & 'Open Science' (good)
-catches '#openscience' & '#OpenScience' (good)
-take-away: not case sensitive (see more: https://developer.twitter.com/en/docs/twitter-api/tweets/search/integrate/build-a-query)
-consider more search terms. 
+## for querries generally
+(1) very important to have "open science" rather than without quotes to get specific search rather than "open AND science" (unless that is intended)
+(2) run_multiple_twarc.sh: for running multiple queries (relies on the .txt files and the 'twarc2 searches' functionality)
+(3) run_single_twarc.sh: for running single query (relies on input and the 'twarc2 search' functionality)
+(4) start_date = 2007-01-01, end_date = 2022-01-01
 
-# Issues / Questions 
-* \u2026, truncates text it seems (main issue)
-* hydrate (do I need this?). 
-* lang:en ? 
-* why not PRECISELY the right number of tweets? 
-* ndjson instead of json? 
-* issue that I get "name" as well as user name? (GDPR). 
-* would be nice to get geo-location. 
-* which things do I NOT need (consider & decide). 
-* what is the smart setup in terms of putting in the "bearer token" all the time. 
+# nlp 
+
+## semantic kernel / preprocessing 
+(1) semantic kernel too little data for e.g. bropenscience
+(2) seems like we still have some stop-words.
+
+# network
+

@@ -1,11 +1,7 @@
 '''
 VMP 2022-02-22: 
-Main document for matching & calculating c_5 and date-delay. 
-Tricky things about matching: 
-1) loop strategy does not ensure best match
-2) would be good to match approximately on two columns rather than only on one (makes it hard to match those with high n. authors)
-
-For now based on Journal only and 2010-2021. 
+has been superceeded by querry_control_match. 
+needs to be deleted (when we have run new data through)
 '''
 
 import pandas as pd 

@@ -2,12 +2,13 @@
 source /work/50114/psyenv/bin/activate
 twarc2 configure # then paste bearer
 
-# for querry
-(1) might need: 
-pip install twarc -U 
-(2) very important to have "open science" rather than without quotes.
+# for querries generally
+(1) very important to have "open science" rather than without quotes to get specific search rather than "open AND science" (unless that is intended)
+(2) run_multiple_twarc.sh: for running multiple queries (relies on the .txt files and the 'twarc2 searches' functionality)
+(3) run_single_twarc.sh: for running single query (relies on input and the 'twarc2 search' functionality)
+(4) start_date = 2007-01-01, end_date = 2022-01-01
 
 # next steps
 check the data that we have & flatten it
 
-# run real stuff
+

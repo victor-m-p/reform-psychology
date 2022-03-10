@@ -102,10 +102,10 @@ class MicrosoftAcademicGraph(object):
 'politicalscience_papers': ('masters/politicalscience_papers.txt', ['PaperId:long']),
 
 # paper subsets (by date and field of study) 
-'psychology_subset': ('masters/psychology_subset.txt', ['PaperId:long']),
-'economics_subset': ('masters/economics_subset.txt', ['PaperId:long']),
-'sociology_subset': ('masters/sociology_subset.txt', ['PaperId:long']),
-'politicalscience_subset': ('masters/politicalscience_subset.txt', ['PaperId:long']),
+'psychology_subset': ('masters/psychology_subset.txt', ['PaperId:long', 'FamilyId:long?']),
+'economics_subset': ('masters/economics_subset.txt', ['PaperId:long', 'FamilyId:long?']),
+'sociology_subset': ('masters/sociology_subset.txt', ['PaperId:long', 'FamilyId:long?']),
+'politicalscience_subset': ('masters/politicalscience_subset.txt', ['PaperId:long', 'FamilyId:long?']),
 
 # papers (with all papers that cite them as well)
 'psychology_total': ('masters/psychology_total.txt', ['PaperId:long']),

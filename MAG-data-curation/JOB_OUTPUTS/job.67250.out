@@ -1,0 +1,281 @@
+Running on desktop3:
+INFO:sparkhpc.sparkjob:master command: /home/vicp/spark-3.0.3-bin-hadoop2.7/sbin/start-master.sh
+INFO:sparkhpc.sparkjob:[[92mstart_cluster] [0mmaster running at spark://172.16.16.103:7077
+INFO:sparkhpc.sparkjob:[[92mstart_cluster] [0mmaster UI available at http://desktop3.hpc.itu.dk:8080
+I GOT THE SCHEDULER
+slurm
+master_command: /home/vicp/spark-3.0.3-bin-hadoop2.7/sbin/start-master.sh
+['desktop3', 'desktop4', 'desktop5', 'desktop6']
+INFO:sparkhpc.sparkjob:slaves command: srun /home/vicp/spark-3.0.3-bin-hadoop2.7/sbin/start-slave.sh spark://172.16.16.103:7077 -c 4
+INFO:sparkhpc.sparkjob:XXX SLAVES SLAVES: srun /home/vicp/spark-3.0.3-bin-hadoop2.7/sbin/start-slave.sh spark://172.16.16.103:7077 -c 4
+starting org.apache.spark.deploy.worker.Worker, logging to /home/vicp/spark-3.0.3-bin-hadoop2.7/logs/spark-vicp-org.apache.spark.deploy.worker.Worker-1-desktop3.out
+starting org.apache.spark.deploy.worker.Worker, logging to /home/vicp/spark-3.0.3-bin-hadoop2.7/logs/spark-vicp-org.apache.spark.deploy.worker.Worker-1-desktop3.out
+starting org.apache.spark.deploy.worker.Worker, logging to /home/vicp/spark-3.0.3-bin-hadoop2.7/logs/spark-vicp-org.apache.spark.deploy.worker.Worker-1-desktop3.out
+starting org.apache.spark.deploy.worker.Worker, logging to /home/vicp/spark-3.0.3-bin-hadoop2.7/logs/spark-vicp-org.apache.spark.deploy.worker.Worker-1-desktop3.out
+Spark Command: /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/bin/java -cp /home/vicp/spark-3.0.3-bin-hadoop2.7/conf/:/home/vicp/spark-3.0.3-bin-hadoop2.7/jars/* -Xmx1g org.apache.spark.deploy.worker.Worker --webui-port 8081 spark://172.16.16.103:7077 -c 4
+========================================
+Spark Command: /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/bin/java -cp /home/vicp/spark-3.0.3-bin-hadoop2.7/conf/:/home/vicp/spark-3.0.3-bin-hadoop2.7/jars/* -Xmx1g org.apache.spark.deploy.worker.Worker --webui-port 8081 spark://172.16.16.103:7077 -c 4
+========================================
+Spark Command: /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/bin/java -cp /home/vicp/spark-3.0.3-bin-hadoop2.7/conf/:/home/vicp/spark-3.0.3-bin-hadoop2.7/jars/* -Xmx1g org.apache.spark.deploy.worker.Worker --webui-port 8081 spark://172.16.16.103:7077 -c 4
+========================================
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Spark Command: /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/bin/java -cp /home/vicp/spark-3.0.3-bin-hadoop2.7/conf/:/home/vicp/spark-3.0.3-bin-hadoop2.7/jars/* -Xmx1g org.apache.spark.deploy.worker.Worker --webui-port 8081 spark://172.16.16.103:7077 -c 4
+========================================
+22/03/08 20:23:07 INFO Worker: Started daemon with process name: 24948@desktop3
+22/03/08 20:23:07 INFO SignalUtils: Registered signal handler for TERM
+22/03/08 20:23:07 INFO SignalUtils: Registered signal handler for HUP
+22/03/08 20:23:07 INFO SignalUtils: Registered signal handler for INT
+22/03/08 20:23:07 WARN Utils: Your hostname, desktop3 resolves to a loopback address: 127.0.0.1; using 172.16.16.103 instead (on interface eno1)
+22/03/08 20:23:07 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+22/03/08 20:23:07 INFO Worker: Started daemon with process name: 21031@desktop5
+22/03/08 20:23:07 INFO SignalUtils: Registered signal handler for TERM
+22/03/08 20:23:07 INFO SignalUtils: Registered signal handler for HUP
+22/03/08 20:23:07 INFO SignalUtils: Registered signal handler for INT
+22/03/08 20:23:07 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+22/03/08 20:23:07 INFO Worker: Started daemon with process name: 17158@desktop4
+22/03/08 20:23:07 WARN Utils: Your hostname, desktop5 resolves to a loopback address: 127.0.0.1; using 172.16.16.105 instead (on interface eno1)
+22/03/08 20:23:07 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+22/03/08 20:23:07 INFO SignalUtils: Registered signal handler for TERM
+22/03/08 20:23:07 INFO SignalUtils: Registered signal handler for HUP
+22/03/08 20:23:07 INFO SignalUtils: Registered signal handler for INT
+22/03/08 20:23:07 INFO SecurityManager: Changing view acls to: vicp
+22/03/08 20:23:07 INFO SecurityManager: Changing modify acls to: vicp
+22/03/08 20:23:07 INFO SecurityManager: Changing view acls groups to: 
+22/03/08 20:23:07 INFO SecurityManager: Changing modify acls groups to: 
+22/03/08 20:23:07 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(vicp); groups with view permissions: Set(); users  with modify permissions: Set(vicp); groups with modify permissions: Set()
+22/03/08 20:23:07 WARN Utils: Your hostname, desktop4 resolves to a loopback address: 127.0.0.1; using 172.16.16.104 instead (on interface eno1)
+22/03/08 20:23:07 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+22/03/08 20:23:07 INFO Utils: Successfully started service 'sparkWorker' on port 35611.
+22/03/08 20:23:07 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+22/03/08 20:23:07 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+22/03/08 20:23:07 INFO SecurityManager: Changing view acls to: vicp
+22/03/08 20:23:07 INFO SecurityManager: Changing modify acls to: vicp
+22/03/08 20:23:07 INFO SecurityManager: Changing view acls groups to: 
+22/03/08 20:23:07 INFO SecurityManager: Changing modify acls groups to: 
+22/03/08 20:23:07 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(vicp); groups with view permissions: Set(); users  with modify permissions: Set(vicp); groups with modify permissions: Set()
+22/03/08 20:23:07 INFO SecurityManager: Changing view acls to: vicp
+22/03/08 20:23:07 INFO SecurityManager: Changing modify acls to: vicp
+22/03/08 20:23:07 INFO SecurityManager: Changing view acls groups to: 
+22/03/08 20:23:07 INFO SecurityManager: Changing modify acls groups to: 
+22/03/08 20:23:07 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(vicp); groups with view permissions: Set(); users  with modify permissions: Set(vicp); groups with modify permissions: Set()
+22/03/08 20:23:08 INFO Worker: Starting Spark worker 172.16.16.103:35611 with 4 cores, 19.5 GiB RAM
+22/03/08 20:23:08 INFO Worker: Running Spark version 3.0.3
+22/03/08 20:23:08 INFO Worker: Spark home: /home/vicp/spark-3.0.3-bin-hadoop2.7
+22/03/08 20:23:08 INFO ResourceUtils: ==============================================================
+22/03/08 20:23:08 INFO ResourceUtils: Resources for spark.worker:
+
+22/03/08 20:23:08 INFO ResourceUtils: ==============================================================
+22/03/08 20:23:08 INFO Utils: Successfully started service 'WorkerUI' on port 8081.
+22/03/08 20:23:08 INFO WorkerWebUI: Bound WorkerWebUI to 0.0.0.0, and started at http://desktop3.hpc.itu.dk:8081
+22/03/08 20:23:08 INFO Worker: Connecting to master 172.16.16.103:7077...
+22/03/08 20:23:08 INFO TransportClientFactory: Successfully created connection to /172.16.16.103:7077 after 34 ms (0 ms spent in bootstraps)
+22/03/08 20:23:08 INFO Utils: Successfully started service 'sparkWorker' on port 39516.
+22/03/08 20:23:08 INFO Worker: Successfully registered with master spark://172.16.16.103:7077
+22/03/08 20:23:08 INFO Utils: Successfully started service 'sparkWorker' on port 38724.
+22/03/08 20:23:08 INFO Worker: Starting Spark worker 172.16.16.105:39516 with 4 cores, 19.5 GiB RAM
+22/03/08 20:23:08 INFO Worker: Running Spark version 3.0.3
+22/03/08 20:23:08 INFO Worker: Spark home: /home/vicp/spark-3.0.3-bin-hadoop2.7
+22/03/08 20:23:08 INFO ResourceUtils: ==============================================================
+22/03/08 20:23:08 INFO ResourceUtils: Resources for spark.worker:
+
+22/03/08 20:23:08 INFO ResourceUtils: ==============================================================
+22/03/08 20:23:08 INFO Worker: Starting Spark worker 172.16.16.104:38724 with 4 cores, 19.5 GiB RAM
+22/03/08 20:23:08 INFO Worker: Running Spark version 3.0.3
+22/03/08 20:23:08 INFO Worker: Spark home: /home/vicp/spark-3.0.3-bin-hadoop2.7
+22/03/08 20:23:08 INFO ResourceUtils: ==============================================================
+22/03/08 20:23:08 INFO ResourceUtils: Resources for spark.worker:
+
+22/03/08 20:23:08 INFO ResourceUtils: ==============================================================
+22/03/08 20:23:08 INFO Utils: Successfully started service 'WorkerUI' on port 8081.
+22/03/08 20:23:08 INFO WorkerWebUI: Bound WorkerWebUI to 0.0.0.0, and started at http://desktop5.hpc.itu.dk:8081
+22/03/08 20:23:08 INFO Worker: Connecting to master 172.16.16.103:7077...
+22/03/08 20:23:08 INFO Utils: Successfully started service 'WorkerUI' on port 8081.
+22/03/08 20:23:08 INFO TransportClientFactory: Successfully created connection to /172.16.16.103:7077 after 30 ms (0 ms spent in bootstraps)
+22/03/08 20:23:08 INFO WorkerWebUI: Bound WorkerWebUI to 0.0.0.0, and started at http://desktop4.hpc.itu.dk:8081
+22/03/08 20:23:08 INFO Worker: Connecting to master 172.16.16.103:7077...
+22/03/08 20:23:08 INFO Worker: Successfully registered with master spark://172.16.16.103:7077
+22/03/08 20:23:08 INFO TransportClientFactory: Successfully created connection to /172.16.16.103:7077 after 40 ms (0 ms spent in bootstraps)
+22/03/08 20:23:08 INFO Worker: Successfully registered with master spark://172.16.16.103:7077
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+22/03/08 20:23:10 INFO Worker: Started daemon with process name: 27236@desktop6
+22/03/08 20:23:10 INFO SignalUtils: Registered signal handler for TERM
+22/03/08 20:23:10 INFO SignalUtils: Registered signal handler for HUP
+22/03/08 20:23:10 INFO SignalUtils: Registered signal handler for INT
+22/03/08 20:23:10 WARN Utils: Your hostname, desktop6 resolves to a loopback address: 127.0.0.1; using 172.16.16.106 instead (on interface eno1)
+22/03/08 20:23:10 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+22/03/08 20:23:10 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+22/03/08 20:23:10 INFO SecurityManager: Changing view acls to: vicp
+22/03/08 20:23:10 INFO SecurityManager: Changing modify acls to: vicp
+22/03/08 20:23:10 INFO SecurityManager: Changing view acls groups to: 
+22/03/08 20:23:10 INFO SecurityManager: Changing modify acls groups to: 
+22/03/08 20:23:10 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(vicp); groups with view permissions: Set(); users  with modify permissions: Set(vicp); groups with modify permissions: Set()
+22/03/08 20:23:11 INFO Utils: Successfully started service 'sparkWorker' on port 42161.
+22/03/08 20:23:11 INFO Worker: Starting Spark worker 172.16.16.106:42161 with 4 cores, 19.5 GiB RAM
+22/03/08 20:23:11 INFO Worker: Running Spark version 3.0.3
+22/03/08 20:23:11 INFO Worker: Spark home: /home/vicp/spark-3.0.3-bin-hadoop2.7
+22/03/08 20:23:11 INFO ResourceUtils: ==============================================================
+22/03/08 20:23:11 INFO ResourceUtils: Resources for spark.worker:
+
+22/03/08 20:23:11 INFO ResourceUtils: ==============================================================
+22/03/08 20:23:11 INFO Utils: Successfully started service 'WorkerUI' on port 8081.
+22/03/08 20:23:11 INFO WorkerWebUI: Bound WorkerWebUI to 0.0.0.0, and started at http://desktop6.hpc.itu.dk:8081
+22/03/08 20:23:11 INFO Worker: Connecting to master 172.16.16.103:7077...
+22/03/08 20:23:11 INFO TransportClientFactory: Successfully created connection to /172.16.16.103:7077 after 32 ms (0 ms spent in bootstraps)
+22/03/08 20:23:11 INFO Worker: Successfully registered with master spark://172.16.16.103:7077
+22/03/08 20:23:15 INFO Worker: Asked to launch executor app-20220308202315-0000/3 for pyspark-shell
+22/03/08 20:23:15 INFO Worker: Asked to launch executor app-20220308202315-0000/0 for pyspark-shell
+22/03/08 20:23:15 INFO Worker: Asked to launch executor app-20220308202315-0000/1 for pyspark-shell
+22/03/08 20:23:15 INFO SecurityManager: Changing view acls to: vicp
+22/03/08 20:23:15 INFO SecurityManager: Changing modify acls to: vicp
+22/03/08 20:23:15 INFO SecurityManager: Changing view acls groups to: 
+22/03/08 20:23:15 INFO SecurityManager: Changing modify acls groups to: 
+22/03/08 20:23:15 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(vicp); groups with view permissions: Set(); users  with modify permissions: Set(vicp); groups with modify permissions: Set()
+22/03/08 20:23:15 INFO Worker: Asked to launch executor app-20220308202315-0000/2 for pyspark-shell
+22/03/08 20:23:15 INFO ExecutorRunner: Launch command: "/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/bin/java" "-cp" "/home/vicp/spark-3.0.3-bin-hadoop2.7/conf/:/home/vicp/spark-3.0.3-bin-hadoop2.7/jars/*" "-Xmx16000M" "-Dspark.driver.port=43098" "org.apache.spark.executor.CoarseGrainedExecutorBackend" "--driver-url" "spark://CoarseGrainedScheduler@desktop13.hpc.itu.dk:43098" "--executor-id" "3" "--hostname" "172.16.16.106" "--cores" "4" "--app-id" "app-20220308202315-0000" "--worker-url" "spark://Worker@172.16.16.106:42161"
+22/03/08 20:23:15 INFO SecurityManager: Changing view acls to: vicp
+22/03/08 20:23:15 INFO SecurityManager: Changing modify acls to: vicp
+22/03/08 20:23:15 INFO SecurityManager: Changing view acls groups to: 
+22/03/08 20:23:15 INFO SecurityManager: Changing modify acls groups to: 
+22/03/08 20:23:15 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(vicp); groups with view permissions: Set(); users  with modify permissions: Set(vicp); groups with modify permissions: Set()
+22/03/08 20:23:15 INFO SecurityManager: Changing view acls to: vicp
+22/03/08 20:23:15 INFO SecurityManager: Changing view acls to: vicp
+22/03/08 20:23:15 INFO SecurityManager: Changing modify acls to: vicp
+22/03/08 20:23:15 INFO SecurityManager: Changing modify acls to: vicp
+22/03/08 20:23:15 INFO SecurityManager: Changing view acls groups to: 
+22/03/08 20:23:15 INFO SecurityManager: Changing modify acls groups to: 
+22/03/08 20:23:15 INFO SecurityManager: Changing view acls groups to: 
+22/03/08 20:23:15 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(vicp); groups with view permissions: Set(); users  with modify permissions: Set(vicp); groups with modify permissions: Set()
+22/03/08 20:23:15 INFO SecurityManager: Changing modify acls groups to: 
+22/03/08 20:23:15 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(vicp); groups with view permissions: Set(); users  with modify permissions: Set(vicp); groups with modify permissions: Set()
+22/03/08 20:23:15 INFO ExecutorRunner: Launch command: "/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/bin/java" "-cp" "/home/vicp/spark-3.0.3-bin-hadoop2.7/conf/:/home/vicp/spark-3.0.3-bin-hadoop2.7/jars/*" "-Xmx16000M" "-Dspark.driver.port=43098" "org.apache.spark.executor.CoarseGrainedExecutorBackend" "--driver-url" "spark://CoarseGrainedScheduler@desktop13.hpc.itu.dk:43098" "--executor-id" "0" "--hostname" "172.16.16.103" "--cores" "4" "--app-id" "app-20220308202315-0000" "--worker-url" "spark://Worker@172.16.16.103:35611"
+22/03/08 20:23:15 INFO ExecutorRunner: Launch command: "/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/bin/java" "-cp" "/home/vicp/spark-3.0.3-bin-hadoop2.7/conf/:/home/vicp/spark-3.0.3-bin-hadoop2.7/jars/*" "-Xmx16000M" "-Dspark.driver.port=43098" "org.apache.spark.executor.CoarseGrainedExecutorBackend" "--driver-url" "spark://CoarseGrainedScheduler@desktop13.hpc.itu.dk:43098" "--executor-id" "1" "--hostname" "172.16.16.104" "--cores" "4" "--app-id" "app-20220308202315-0000" "--worker-url" "spark://Worker@172.16.16.104:38724"
+22/03/08 20:23:15 INFO ExecutorRunner: Launch command: "/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.el7_7.x86_64/bin/java" "-cp" "/home/vicp/spark-3.0.3-bin-hadoop2.7/conf/:/home/vicp/spark-3.0.3-bin-hadoop2.7/jars/*" "-Xmx16000M" "-Dspark.driver.port=43098" "org.apache.spark.executor.CoarseGrainedExecutorBackend" "--driver-url" "spark://CoarseGrainedScheduler@desktop13.hpc.itu.dk:43098" "--executor-id" "2" "--hostname" "172.16.16.105" "--cores" "4" "--app-id" "app-20220308202315-0000" "--worker-url" "spark://Worker@172.16.16.105:39516"
+22/03/09 10:54:45 INFO Worker: Asked to kill executor app-20220308202315-0000/3
+22/03/09 10:54:45 INFO ExecutorRunner: Runner thread for executor app-20220308202315-0000/3 interrupted
+22/03/09 10:54:45 INFO Worker: Asked to kill executor app-20220308202315-0000/2
+22/03/09 10:54:45 INFO ExecutorRunner: Killing process!
+22/03/09 10:54:45 INFO ExecutorRunner: Runner thread for executor app-20220308202315-0000/2 interrupted
+22/03/09 10:54:45 INFO ExecutorRunner: Killing process!
+22/03/09 10:54:45 INFO Worker: Asked to kill executor app-20220308202315-0000/0
+22/03/09 10:54:45 INFO Worker: Asked to kill executor app-20220308202315-0000/1
+22/03/09 10:54:45 INFO ExecutorRunner: Runner thread for executor app-20220308202315-0000/1 interrupted
+22/03/09 10:54:45 INFO ExecutorRunner: Killing process!
+22/03/09 10:54:45 INFO ExecutorRunner: Runner thread for executor app-20220308202315-0000/0 interrupted
+22/03/09 10:54:45 INFO ExecutorRunner: Killing process!
+22/03/09 10:54:55 INFO Worker: Executor app-20220308202315-0000/2 finished with state KILLED exitStatus 137
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Clean up non-shuffle and non-RDD files associated with the finished executor 2
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Executor is not registered (appId=app-20220308202315-0000, execId=2)
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Application app-20220308202315-0000 removed, cleanupLocalDirs = true
+22/03/09 10:54:55 INFO Worker: Executor app-20220308202315-0000/3 finished with state KILLED exitStatus 137
+22/03/09 10:54:55 INFO Worker: Cleaning up local directories for application app-20220308202315-0000
+22/03/09 10:54:55 INFO Worker: Executor app-20220308202315-0000/1 finished with state KILLED exitStatus 137
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Clean up non-shuffle and non-RDD files associated with the finished executor 3
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Clean up non-shuffle and non-RDD files associated with the finished executor 1
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Executor is not registered (appId=app-20220308202315-0000, execId=3)
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Executor is not registered (appId=app-20220308202315-0000, execId=1)
+22/03/09 10:54:55 INFO Worker: Cleaning up local directories for application app-20220308202315-0000
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Application app-20220308202315-0000 removed, cleanupLocalDirs = true
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Application app-20220308202315-0000 removed, cleanupLocalDirs = true
+22/03/09 10:54:55 INFO Worker: Cleaning up local directories for application app-20220308202315-0000
+22/03/09 10:54:55 INFO Worker: Executor app-20220308202315-0000/0 finished with state KILLED exitStatus 137
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Clean up non-shuffle and non-RDD files associated with the finished executor 0
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Executor is not registered (appId=app-20220308202315-0000, execId=0)
+22/03/09 10:54:55 INFO Worker: Cleaning up local directories for application app-20220308202315-0000
+22/03/09 10:54:55 INFO ExternalShuffleBlockResolver: Application app-20220308202315-0000 removed, cleanupLocalDirs = true
+22/03/09 10:55:05 WARN JavaUtils: Attempt to delete using native Unix OS command failed for path = /home/vicp/reform-psychology/MAG-data-curation/TMP/spark-0e91adaf-5628-4b52-b563-333aa01c5e06/executor-84b8f7fb-ef9d-43b8-bf0e-bb3a72ab79f8. Falling back to Java IO way
+java.io.IOException: Failed to delete: /home/vicp/reform-psychology/MAG-data-curation/TMP/spark-0e91adaf-5628-4b52-b563-333aa01c5e06/executor-84b8f7fb-ef9d-43b8-bf0e-bb3a72ab79f8
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingUnixNative(JavaUtils.java:171)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:110)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:91)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1079)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$5(Worker.scala:693)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$5$adapted(Worker.scala:692)
+	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+	at scala.collection.mutable.WrappedArray.foreach(WrappedArray.scala:38)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$3(Worker.scala:692)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.concurrent.Future$.$anonfun$apply$1(Future.scala:659)
+	at scala.util.Success.$anonfun$map$1(Try.scala:255)
+	at scala.util.Success.map(Try.scala:213)
+	at scala.concurrent.Future.$anonfun$map$1(Future.scala:292)
+	at scala.concurrent.impl.Promise.liftedTree1$1(Promise.scala:33)
+	at scala.concurrent.impl.Promise.$anonfun$transform$1(Promise.scala:33)
+	at scala.concurrent.impl.CallbackRunnable.run(Promise.scala:64)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+22/03/09 10:55:06 WARN JavaUtils: Attempt to delete using native Unix OS command failed for path = /home/vicp/reform-psychology/MAG-data-curation/TMP/spark-b0adc5bf-061d-4011-b127-6b1deeb3e8ff/executor-7217cf7b-8ea4-4330-afec-3badc92e1b18. Falling back to Java IO way
+java.io.IOException: Failed to delete: /home/vicp/reform-psychology/MAG-data-curation/TMP/spark-b0adc5bf-061d-4011-b127-6b1deeb3e8ff/executor-7217cf7b-8ea4-4330-afec-3badc92e1b18
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingUnixNative(JavaUtils.java:171)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:110)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:91)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1079)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$5(Worker.scala:693)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$5$adapted(Worker.scala:692)
+	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+	at scala.collection.mutable.WrappedArray.foreach(WrappedArray.scala:38)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$3(Worker.scala:692)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.concurrent.Future$.$anonfun$apply$1(Future.scala:659)
+	at scala.util.Success.$anonfun$map$1(Try.scala:255)
+	at scala.util.Success.map(Try.scala:213)
+	at scala.concurrent.Future.$anonfun$map$1(Future.scala:292)
+	at scala.concurrent.impl.Promise.liftedTree1$1(Promise.scala:33)
+	at scala.concurrent.impl.Promise.$anonfun$transform$1(Promise.scala:33)
+	at scala.concurrent.impl.CallbackRunnable.run(Promise.scala:64)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+22/03/09 10:55:07 WARN JavaUtils: Attempt to delete using native Unix OS command failed for path = /home/vicp/reform-psychology/MAG-data-curation/TMP/spark-0636c29b-3d6e-4b47-adb5-fbee3411baed/executor-21ab0e85-718f-4590-8758-c46ac31e6c8e. Falling back to Java IO way
+java.io.IOException: Failed to delete: /home/vicp/reform-psychology/MAG-data-curation/TMP/spark-0636c29b-3d6e-4b47-adb5-fbee3411baed/executor-21ab0e85-718f-4590-8758-c46ac31e6c8e
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingUnixNative(JavaUtils.java:171)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:110)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:91)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1079)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$5(Worker.scala:693)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$5$adapted(Worker.scala:692)
+	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+	at scala.collection.mutable.WrappedArray.foreach(WrappedArray.scala:38)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$3(Worker.scala:692)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.concurrent.Future$.$anonfun$apply$1(Future.scala:659)
+	at scala.util.Success.$anonfun$map$1(Try.scala:255)
+	at scala.util.Success.map(Try.scala:213)
+	at scala.concurrent.Future.$anonfun$map$1(Future.scala:292)
+	at scala.concurrent.impl.Promise.liftedTree1$1(Promise.scala:33)
+	at scala.concurrent.impl.Promise.$anonfun$transform$1(Promise.scala:33)
+	at scala.concurrent.impl.CallbackRunnable.run(Promise.scala:64)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+22/03/09 10:55:07 WARN JavaUtils: Attempt to delete using native Unix OS command failed for path = /home/vicp/reform-psychology/MAG-data-curation/TMP/spark-eee318c9-d0b3-4427-b380-1827974af020/executor-6f28e938-6531-44dd-b725-e744cb706b26. Falling back to Java IO way
+java.io.IOException: Failed to delete: /home/vicp/reform-psychology/MAG-data-curation/TMP/spark-eee318c9-d0b3-4427-b380-1827974af020/executor-6f28e938-6531-44dd-b725-e744cb706b26
+	at org.apache.spark.network.util.JavaUtils.deleteRecursivelyUsingUnixNative(JavaUtils.java:171)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:110)
+	at org.apache.spark.network.util.JavaUtils.deleteRecursively(JavaUtils.java:91)
+	at org.apache.spark.util.Utils$.deleteRecursively(Utils.scala:1079)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$5(Worker.scala:693)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$5$adapted(Worker.scala:692)
+	at scala.collection.IndexedSeqOptimized.foreach(IndexedSeqOptimized.scala:36)
+	at scala.collection.IndexedSeqOptimized.foreach$(IndexedSeqOptimized.scala:33)
+	at scala.collection.mutable.WrappedArray.foreach(WrappedArray.scala:38)
+	at org.apache.spark.deploy.worker.Worker.$anonfun$maybeCleanupApplication$3(Worker.scala:692)
+	at scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.java:23)
+	at scala.concurrent.Future$.$anonfun$apply$1(Future.scala:659)
+	at scala.util.Success.$anonfun$map$1(Try.scala:255)
+	at scala.util.Success.map(Try.scala:213)
+	at scala.concurrent.Future.$anonfun$map$1(Future.scala:292)
+	at scala.concurrent.impl.Promise.liftedTree1$1(Promise.scala:33)
+	at scala.concurrent.impl.Promise.$anonfun$transform$1(Promise.scala:33)
+	at scala.concurrent.impl.CallbackRunnable.run(Promise.scala:64)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** STEP 67250.1 ON desktop3 CANCELLED AT 2022-03-09T19:53:15 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 67250 ON desktop3 CANCELLED AT 2022-03-09T19:53:15 DUE TO TIME LIMIT ***

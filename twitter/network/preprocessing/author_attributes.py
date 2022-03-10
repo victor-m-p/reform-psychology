@@ -44,18 +44,24 @@ def create_subset(df, type):
     return df_clean 
 
 ''' fix countrycode '''
-# all authors with non-null countrycode: mode (break ties at random)
-# this is the main place where we have multiple values for each author
-# we have very few values: could try with "location". 
+# get the newest that is non-na (otherwise use na)
 def country_code_mode(df): 
     '''
     d: <pd.dataframe>: data with at least "username" and "countrycode" columns
 
     explanation: 
-    mode of countrycode for all authors that have non-NaN value. 
-    breaks ties at random
+    most recent country if any non-na, otherwise na 
     '''
+
+    # (1) subset those with non-nan 
+    df_notna = df[~df["countrycode"].isnull()][["countrycode", "username"]]
+    df_na = df.drop(columns='countrycode').drop_duplicates()
+
+    # (2) ties extremely unlikely, so fine: 
+    df_new = df_notna.groupby('username').sample(n = 1, random_state = 113)
+    df_global = df_new.merge(df_na, on = 'username', how = 'outer')
     
+    '''
     # get the mode of country
     df_countrycode = df.groupby('username')['countrycode'].apply(pd.Series.mode).reset_index()
     df_countrycode = df_countrycode[["username", "countrycode"]]
@@ -71,13 +77,14 @@ def country_code_mode(df):
     rows_total = len(df_cleaned)
     username_total = len(df_cleaned["username"].drop_duplicates())
     has_countrycode = len(df_cleaned[~df_cleaned["countrycode"].isnull()])
-    print("\n--- fix country-codes ---")
-    print(f"total rows: {rows_total}")
-    print(f"username total: {username_total}")
-    print(f"has countrycode: {has_countrycode}")
+    print(f"* total rows: {rows_total}")
+    print(f"* username total: {username_total}")
+    print(f"* has countrycode: {has_countrycode}")
 
     # return df 
     return df_cleaned 
+    '''
+    return df_global 
 
 ''' convert dates '''
 # conver_dates to datetime64[ns] 
@@ -154,28 +161,35 @@ def add_gender(df):
 
 # main 
 def main(infile, outpath): 
+    # print 
     print(f"--- running: author attributes ---")
 
     ## read data & get filename
+    print(f"--> loading file")
     with open(f"{infile}", "rb") as f:
         dct = pickle.load(f)
 
+    print(f"--> creating dataframe")
     df = pd.DataFrame.from_dict(dct)
     outname = re.search("preprocessed/(.*).pickle", infile)[1]
 
     ## create subsets & concat
+    print(f"--> creating subsets")
     df_main = create_subset(df, "main") 
     df_ref = create_subset(df, "ref")
     df = pd.concat([df_main, df_ref])
     
-    ## country 
+    ## country (takes a while bc. mode is slow)
+    print(f"--> country codes")
     df = country_code_mode(df)
 
     ## dates
+    print(f"--> account dates")
     cols = ["account_date"]
     df = convert_dates(df, cols)
 
     ## first name
+    print(f"--> genderization")
     regex_firstname = r"(\w+)"
     df = add_first_name(df, regex_firstname)
     
@@ -183,7 +197,11 @@ def main(infile, outpath):
     df = add_gender(df) 
 
     ## write file 
+    print(f"--> writing file")
     df.to_csv(f'{outpath}/{outname}_authors.csv', index = False)
+
+    # print
+    print(f"--- finished: author attributes")
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

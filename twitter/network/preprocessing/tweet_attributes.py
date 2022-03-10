@@ -33,13 +33,15 @@ def main(infile, outpath):
     print(f"--- running: tweet attributes ---")
 
     ## read data & get filename
+    print(f"--> loading file")
     with open(f"{infile}", "rb") as f:
         dct = pickle.load(f)
 
     df = pd.DataFrame.from_dict(dct)
     outname = re.search("preprocessed/(.*).pickle", infile)[1]
 
-    # subset columns & rename 
+    # subset columns & rename
+    print(f"--> column organization") 
     columns = ["main_author_username", "main_tweet_date", "type_tweet"]
     df = df[columns]
     df = df.rename(columns={
@@ -48,12 +50,16 @@ def main(infile, outpath):
         })
 
     ## dates
+    print(f"--> converting dates")
     cols = ["tweet_date"]
     df = convert_dates(df, cols)
 
     ## write file 
+    print(f"--> writing file")
     df.to_csv(f'{outpath}/{outname}_tweets.csv', index = False)  
 
+    # print 
+    print(f"--- finished: tweeet attributes ---")
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--infile", required=True, type=str, help="path to input file (.pickle from ../../data/raw/preprocessed/file.pickle)")

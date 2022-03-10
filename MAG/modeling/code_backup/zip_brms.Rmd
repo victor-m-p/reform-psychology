@@ -1,0 +1,608 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+# if first session on Ucloud
+
+```{r, include=FALSE}
+
+# consider pacman
+install.packages("pacman") 
+library(pacman)
+
+p_load(tidyverse, brms, ggthemes)
+#install.packages('tidyverse')
+#install.packages('brms')
+#install.packages("ggthemes")
+#library(tidyverse)
+#library(brms)
+#library(ggthemes)
+
+# set up cmdstanr 
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+
+
+```
+
+# load data
+
+```{r}
+
+# check data
+d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_coded = ifelse(condition == "experiment", 1, 0),
+         condition_fct = as_factor(condition), 
+         teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
+         days_after_2010_scaled = days_after_2010/max(days_after_2010),
+         id_fct = as_factor(PaperId)) %>% # because min = 0
+  glimpse()
+
+```
+
+## straight to main model (no random slopes yet though) ##
+
+```{r}
+
+# main model & interaction model (fit both negative binomial & zero-inflated poisson)
+# just changed to factor now 
+f_team = bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled)
+f_delay = bf(c_5 ~ 0 + condition_fct + condition_fct:days_after_2010_scaled)
+f_large = bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + condition_fct:days_after_2010_scaled)
+f_var = bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + condition_fct:days_after_2010_scaled + (1|id_fct)) # does not work right now, priors?
+
+```
+
+# get priors for zero-inflated poisson and negative binomial 
+# priors losely based on defaults & recoded (but could need more thouhgt). 
+
+## zero-inflated poisson (ZIP):
+class = b, 
+class = zi 
+
+## negative binomial (NB):
+class = b,
+class = gamma
+
+## zero-inflated negative binomial: 
+class = b,
+class = zi, 
+class = gamma 
+
+## for the random intercept we also need class = sd 
+
+```{r}
+
+get_prior(
+  formula = f_int,
+  data = d,
+  family = zero_inflated_poisson(),
+)
+
+get_prior(
+  formula = f_int, 
+  data = d, 
+  family = negbinomial()
+)
+
+get_prior(
+  formula = f_int,
+  data = d,
+  family = zero_inflated_negbinomial()
+)
+
+get_prior(
+  formula = f_var,
+  data = d,
+  family = zero_inflated_poisson()
+)
+
+```
+
+# function for fitting models 
+
+```{r}
+
+fit_model <- function(family, formula, prior){ 
+  
+  m <- brm(data = d, 
+           family = family, 
+           formula = formula,
+           prior = prior, 
+           cores = 4,
+           seed = 11,
+           backend = "cmdstanr")
+  return(m)
+  
+  }
+  
+```
+
+# fit all the models 
+should probably save them 
+
+```{r, include=FALSE}
+
+## ZIP models 
+
+zip_prior_base <- c(prior(beta(2, 2), class = zi), # the brms default is beta(1, 1)
+                    prior(normal(0, 5), class = b))
+
+zip_main <- fit_model(
+  family = zero_inflated_poisson(), 
+  formula = f_main,
+  prior = zip_prior
+)
+
+zip_int <- fit_model(
+  family = zero_inflated_poisson(), 
+  formula = f_int,
+  prior = zip_prior
+)
+
+# just accept baseline prior for sd for now 
+zip_var <- fit_model(
+  family = zero_inflated_poisson(),
+  formula = f_var,
+  prior = zip_prior
+)
+
+## negative binomial models 
+
+negbin_prior <- c(prior(gamma(0.01, 0.01), class = shape), # default
+                  prior(normal(0, 5), class = b))
+
+negbin_main <- fit_model(
+  family = negbinomial(), 
+  formula = f_main,
+  prior = negbin_prior
+)
+
+negbin_int <- fit_model(
+  family = negbinomial(),
+  formula = f_int, 
+  prior = negbin_prior
+)
+
+# baseline priors for sd 
+negbin_var <- fit_model(
+  family = negbinomial(),
+  formula = f_var,
+  prior = negbin_prior
+)
+
+## zero-inflated negative binomial models 
+
+zinegbin_prior = c(prior(gamma(0.01, 0.01), class = shape),  # using the default
+                prior(normal(0, 5), class = b),
+                prior(beta(2, 2), class = zi))
+
+zinegbin_main <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_main,
+  prior = zinegbin_prior
+)
+
+zinegbin_int <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_int,
+  prior = zinegbin_prior
+)
+
+# baseline priors for sd 
+zinegbin_var <- fit_model(
+  family = zero_inflated_negbinomial(),
+  formula = f_var,
+  prior = zinegbin_prior
+)
+
+```
+
+## check basics ## 
+
+```{r}
+
+print(zip_main)
+print(zip_int)
+print(zip_var) # problematic Rhat, perhaps priors?
+print(negbin_main)
+print(negbin_int)
+print(negbin_var) # problematic Rhat, perhaps priors?
+print(zinegbin_main)
+print(zinegbin_int)
+print(zinegbin_var) # problematic Rhat, perhaps priors?
+
+```
+
+## check sampling ##
+
+.... 
+
+## model comparison ## 
+some issues with p_waic: can we tweak the models to make them better? 
+negative binomial appears to provide a slightly better fit than zero-inflated negative binomial. 
+we have to actually check how this looks.
+
+```{r}
+
+# zip models need loo & moment match 
+zip_main <- add_criterion(zip_main, "waic") # loo instead, many p_waic issues
+zip_int <- add_criterion(zip_int, "waic") # loo instead, many p_waic issues
+negbin_main <- add_criterion(negbin_main, "waic") # no issues 
+negbin_int <- add_criterion(negbin_int, "waic") # 1 issue with p_waic
+zinegbin_main <- add_criterion(zinegbin_main, "waic") # 1 issue with p_waic
+zinegbin_int <- add_criterion(zinegbin_int, "waic") # 1 issue with p_waic
+
+# compare the WAIC estimates
+w <- loo_compare(zip_main, 
+                 zip_int, 
+                 negbin_main, 
+                 negbin_int,
+                 zinegbin_main,
+                 zinegbin_int,
+                 criterion = "waic")
+
+print(w)
+
+# check model weights 
+model_weights(zip_main, 
+              zip_int, 
+              negbin_main, 
+              negbin_int,
+              zinegbin_main,
+              zinegbin_int,
+              weights = "waic") %>% 
+  round(digits = 2)
+
+```
+
+## check model 
+# exponentiate results to get count scale (because of log-link). 
+# check influential datapoints (Rethinking CH 11)
+# plot implications of prior & posterior. 
+# following CH 11 (oceanic tools) we should force intercept (i.e. zero authors to have zero citations) - i.e. pass through origin. 
+
+
+
+
+### below is old ###
+
+# check UCB data (should it be a factor or 1/0)?
+
+```{r}
+install.packages(c("coda","mvtnorm","devtools","loo","dagitty"))
+devtools::install_github("rmcelreath/rethinking")
+library(rethinking)
+data(UCBadmit)
+UCBd <- UCBadmit
+rm(UCBadmit)
+detach(package:rethinking, unload = T)
+library(brms)
+```
+```{r}
+UCBd %>% glimpse()
+```
+
+```{r}
+# his intercept is close to both (closer to median) -- but it is also for female right? we should go factor I think. 
+UCBd %>% summarize(admit_mean = mean(admit),
+                   admit_median = median(admit))
+```
+
+
+
+#### BELOW IS OLD ####
+
+### fit Poisson model ###
+
+### wrange data 
+
+```{r}
+
+# not sure whether we want log_teamsize, but we can experiment & ask Ric
+# ^ should be motivated by (1) theory and (2) plot 
+d <- d %>%
+  mutate(log_teamsize = log(n_authors),
+         condition_coded = ifelse(condition == "experimental", 1, 0),
+         c5_added = c_5 + 1)
+
+```
+
+```{r}
+
+# trying to trouble-shoot the problem below
+d %>% 
+  summarize(c5_min = min(c5_added),
+            c5_max = max(c5_added),
+            cond_min = min(condition_coded),
+            authors_min = min(n_authors),
+            days_min = min(days_after_2010)) %>%
+  glimpse()
+
+```
+
+## model 1 (main effects)
+### c_5 ~ 1 + condition_coded + n_authors + days_after_2010
+### NB: ask Riccardo about match group
+### think about actually reasonable priors
+
+```{r}
+
+# find the get_prior() function
+# normal(0, 1) for beta completely fucked Rhat, tried normal(0, 10) instead
+# I think (maybe) the issue is that I have 0s, which are log(0) = -inf
+# now I just added one as a test...  still does not work. 
+poisson_main <-
+  brm(data = d, family = poisson,
+      c5_added ~ 1 + condition_coded + n_authors + days_after_2010,
+      prior = c(prior(normal(0, 100), class = Intercept),
+                prior(normal(0, 1), class = b)),
+      iter = 3000, warmup = 1000, chains = 2, cores = 2,
+      seed = 10) 
+
+```
+
+### check model 
+### completely fucked
+
+```{r}
+
+print(poisson_main)
+
+```
+
+# try ZIP model
+## still get the log(0) issue & slow sampling
+
+```{r}
+
+f_small_main = bf(c_5 ~ 1 + condition_coded)
+f_large_main = bf(c_5 ~ 1 + condition_coded + n_authors + days_after_2010)
+
+```
+
+```{r}
+
+get_prior(
+  formula = f_small_main,
+  data = d,
+  family = zero_inflated_poisson(),
+)
+
+```
+
+
+```{r}
+
+# works now, but really no effect. 
+# could be just right or model could be weird
+# weird that est. error is so large for condition_coded or just me?
+# should it be 0/1 coded or be a factor somehow?
+zip_small_main <- 
+  brm(data = d, family = zero_inflated_poisson,
+      f_small_main,
+      prior = c(prior(normal(0, 10), class = Intercept),
+                prior(beta(2, 2), class = zi),  # the brms default is beta(1, 1)
+                prior(normal(0, 1), class = b)),  
+      cores = 4,
+      seed = 11) 
+
+```
+
+```{r}
+
+print(zip_small_main)
+
+```
+
+## large model, re-order the data (fucks up completely) ##
+
+```{r}
+
+# recode data (0/1 coded)
+d <- d %>%
+  mutate(teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
+         days_after_2010_scaled = days_after_2010/max(days_after_2010)) # because min = 0
+
+# check
+d %>% 
+  summarize(
+    teamsize_min = min(teamsize_scaled), 
+    teamsize_max = max(teamsize_scaled),
+    days_min = min(days_after_2010_scaled),
+    days_max = max(days_after_2010_scaled)
+  ) %>%
+  glimpse()
+
+```
+
+```{r}
+
+f_large_main = bf(c_5 ~ 1 + condition_coded + teamsize_scaled + days_after_2010_scaled)
+
+```
+
+
+```{r}
+
+# Rhat through the roof (before scaling our stuff to (0,1) range). 
+zip_large_main <- 
+  brm(data = d, family = zero_inflated_poisson,
+      f_large_main,
+      prior = c(prior(normal(0, 10), class = Intercept),
+                prior(beta(2, 2), class = zi),  # the brms default is beta(1, 1)
+                prior(normal(0, 1), class = b)),  
+      cores = 4,
+      seed = 11) 
+
+```
+
+```{r}
+
+# teamsize is really good (makes sense, should be the case)
+# days negative (less citations for newer articles, a bit weird maybe?)
+# extremely high est. error for condition (has to be something with coding as 0/1?)
+print(zip_large_main)
+
+```
+
+## interactions ## 
+
+
+## random effects ##
+
+
+## earlier experimental stuff ##
+
+### fit ZIP model (just intercept for one group) ###
+
+```{r}
+
+# subset data 
+d_exp <- d %>% 
+  filter(condition == "experiment")
+
+d_ctrl <- d %>%
+  filter(condition == "control")
+
+```
+
+# fit experimental
+
+```{r}
+
+# zi: probability of zero. default is flat (0, 1) specified with beta(1, 1), we can increase weight around 0.5 with beta(2, 2)
+# Intercept: not sure (also what is reasonable, check "rethinking" book)
+
+b_intercept_exp <- 
+  brm(data = d_exp, family = zero_inflated_poisson,
+      c_5 ~ 1,
+      prior = c(prior(normal(0, 10), class = Intercept),
+                prior(beta(2, 2), class = zi)),  # the brms default is beta(1, 1)
+      cores = 4,
+      seed = 11) 
+
+```
+
+# fit control 
+
+```{r}
+
+b_intercept_ctrl <- 
+  brm(data = d_ctrl, family = zero_inflated_poisson,
+      c_5 ~ 1,
+      prior = c(prior(normal(0, 10), class = Intercept),
+                prior(beta(2, 2), class = zi)),  # the brms default is beta(1, 1)
+      cores = 4,
+      seed = 11) 
+
+```
+
+# check whether this makes any sense 
+intercept: small difference w. non-overlapping 95% CI.
+zi: small difference with overlapping 95% CI
+
+```{r}
+
+# intercept: 2.64 (2.60, 2.67)
+# zi: 0.44 (0.39, 0.49)
+print(b_intercept_exp)
+
+```
+
+```{r}
+
+# intercept: 2.55 (2.51, 2.59)
+# zi: 0.52 (0.47, 0.57)
+print(b_intercept_ctrl)
+
+```
+
+# plot
+
+```{r}
+
+tibble(`zi prior`= seq(from = 0, to = 1, length.out = 50)) %>%
+  mutate(`beta(1, 1)` = dbeta(`zi prior`, 1, 1),
+         `beta(2, 2)` = dbeta(`zi prior`, 2, 2))  %>% 
+  gather(prior, density, -`zi prior`) %>% 
+  
+  ggplot(aes(x    = `zi prior`, 
+             ymin = 0,
+             ymax = density)) +
+  geom_ribbon(aes(fill = prior)) +
+  scale_fill_manual(values = c(canva_pal("Green fields")(4)[4],
+                               canva_pal("Green fields")(4)[2])) +
+  scale_x_continuous("prior for zi", breaks = c(0, .5, 1)) +
+  scale_y_continuous(NULL, breaks = NULL) +
+  theme_hc() +
+  theme(plot.background = element_rect(fill = "grey92"),
+        legend.position = "none") +
+  facet_wrap(~prior)
+
+```
+
+# plot our posteriors
+
+```{r}
+
+dzip <- function( x , p , lambda , log=TRUE ) {
+    ll <- ifelse(
+        x==0 ,
+        p + (1-p)*exp(-lambda) ,
+        (1-p)*dpois(x,lambda,FALSE)
+    )
+    if ( log==TRUE ) ll <- log(ll)
+    return(ll)
+}
+
+```
+
+### data generation does not look good. 
+### probably because we have crazy outliers. 
+### should be many more small values. 
+
+```{r}
+
+p_b11.4      <- posterior_summary(b_intercept_exp)[2, 1]
+lambda_b11.4 <- posterior_summary(b_intercept_exp)[1, 1] %>% exp()
+
+
+tibble(x = 0:100) %>% 
+  mutate(density = dzip(x = x, 
+                        p = p_b11.4, 
+                        lambda = lambda_b11.4, 
+                        log = F)) %>% 
+  
+  ggplot(aes(x = x, y = density)) +
+  geom_col(fill = canva_pal("Green fields")(4)[4]) +
+  xlab("Manuscripts completed") +
+  theme_hc() +
+  theme(plot.background = element_rect(fill = "grey92"))
+
+```
+
+```{r}
+
+p_b11.4      <- posterior_summary(b_intercept_ctrl)[2, 1]
+lambda_b11.4 <- posterior_summary(b_intercept_ctrl)[1, 1] %>% exp()
+
+
+tibble(x = 0:100) %>% 
+  mutate(density = dzip(x = x, 
+                        p = p_b11.4, 
+                        lambda = lambda_b11.4, 
+                        log = F)) %>% 
+  
+  ggplot(aes(x = x, y = density)) +
+  geom_col(fill = canva_pal("Green fields")(4)[4]) +
+  xlab("Manuscripts completed") +
+  theme_hc() +
+  theme(plot.background = element_rect(fill = "grey92"))
+
+```
+
+

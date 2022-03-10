@@ -1,0 +1,5 @@
+---
+title: "Hypothesis Testing"
+author: "Victor M. Poulsen" 
+output: html_document
+---

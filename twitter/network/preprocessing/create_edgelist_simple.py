@@ -1,7 +1,6 @@
 '''
 VMP 2022-03-04: 
 creating edgelist.
-need a required (FALSE) in the add_arguments() 
 
 NB: in this network "original" tweets are not used because they do not reference. 
 '''
@@ -41,8 +40,9 @@ def gather_tweet_types(df_lst, group_cols, remove_self_reference = True):
     return df_total
 
 def main(infile, outpath, remove_self_reference = True): 
-    print(f"--- creating edgelist ---")
-    print(f"remove self-reference: {remove_self_reference}")
+    print(f"--- running: weighted edgelist ---")
+    print(f"--> remove self-reference: {remove_self_reference}")
+    print(f"--> loading data")
     ## read data & get filename
     with open(f"{infile}", "rb") as f:
         dct = pickle.load(f)
@@ -63,6 +63,7 @@ def main(infile, outpath, remove_self_reference = True):
 
     ## (1) quoted --> original 
     ### (1.1) simple here: 
+    print(f"--> processing tweet types")
     df_quoted = df[df["type_tweet"] == "quoted"]
     df_quoted_weight = get_weighted(df_quoted, group_cols)
 
@@ -98,9 +99,10 @@ def main(infile, outpath, remove_self_reference = True):
     # write output 
     filename = f"{outpath}{outname}_edgelist_simple.csv"
     colnames = list(df_clean.columns)
-    print(f"writing file: {filename}")
-    print(f"colnames: {colnames}")
+    print(f"--> writing file: {filename}")
+    print(f"--> colnames: {colnames}")
     df_clean.to_csv(f"{filename}", index = False)
+    print(f"--- finished: weighted edgelist ---")
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

@@ -3,8 +3,14 @@ VMP 2022-03-03: key document
 converts ndjson to dictionary and saves pickle.
 retreives all the key information that we need for analysis. 
 
+run:
+python ndjson2dct.py -i path/to/flat/ndjson -o path/to/preprocessed/csv
+
 change-log: 
 2022-04-03: changed "None" to None. 
+
+to-do: 
+figure out which columns we actually use & delete everything else. 
 '''
 
 import pandas as pd 
@@ -197,13 +203,15 @@ def create_dct(data):
     return dct
 
 def main(infile, outpath):
-    print(f"--- loading file ---")
+    print(f"--- starting: preprocessing ---")
+    print(f"--> loading file")
     data, filename_out = load_data(infile) 
-    print(f"--- create dataframe ---")
+    print(f"--> create dictionary")
     dct = create_dct(data)
-    print(f"--- writing file ---")
+    print(f"--> writing pickle file")
     with open(f'{outpath}/{filename_out}.pickle', 'wb') as handle:
         pickle.dump(dct, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"--- finished: preprocessing ---")
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -212,11 +220,3 @@ if __name__ == '__main__':
     args = vars(ap.parse_args())
 
     main(infile = args["infile"], outpath = args["outpath"])
-
-
-
-
-
-
-
-

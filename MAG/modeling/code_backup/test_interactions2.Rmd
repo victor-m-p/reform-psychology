@@ -1,0 +1,463 @@
+---
+title: "Test Interaction"
+author: "Victor Møller Poulsen"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+# consider pacman
+install.packages("pacman") 
+library(pacman)
+
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
+
+# set up cmdstanr 
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+
+setwd("/work/50114/MAG/modeling/code")
+source("fun_helper.R")
+```
+
+```{r}
+
+# check data
+d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_coded = ifelse(condition == "experiment", 1, 0),
+         condition_fct = as_factor(condition), 
+         teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
+         days_after_2010_scaled = days_after_2010/max(days_after_2010),
+         id_fct = as_factor(PaperId)) %>% # because min = 0
+  glimpse()
+
+```
+
+Different ways of specifying something similar. 
+We had issues with model (f_team_0) earlier. 
+Trying to troubleshoot whether it is related to intercept & 
+I think that (0 + Intercept) syntax is actually more appropriate 
+since it does not assume mean centering (something like that). 
+
+```{r}
+
+f_team_0 <- bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + (1|id_fct))
+f_team_1 <- bf(c_5 ~ 1 + condition_fct + condition_fct:teamsize_scaled + (1|id_fct))
+f_team_01 <- bf(c_5 ~ 0 + Intercept + condition_fct + condition_fct:teamsize_scaled + (1|id_fct))
+
+```
+
+Just doing negbinomial() for now, since we had Rhat issues for both negative binomial and
+zero-inflated negative binomial (does not seem to be the main cause of issues). 
+
+f_team_0: b, sd, shape
+f_team_1: b, Intercept, sd, shape
+f_team_01: b, sd, shape (Intercept becomes b). 
+
+```{r, include=FALSE}
+
+get_prior(
+  formula = f_team_0,
+  data = d,
+  family = negbinomial()
+)
+
+get_prior(
+  formula = f_team_1,
+  data = d,
+  family = negbinomial()
+)
+
+get_prior(
+  formula = f_team_01,
+  data = d,
+  family = negbinomial()
+)
+
+```
+
+set priors
+
+```{r}
+
+# negbin baseline
+negbin_0 <- c(prior(gamma(0.01, 0.01), class = shape), 
+              prior(normal(0, 1), class = b),
+              prior(normal(0, 1), class = sd)) # a wild guess
+
+# zinegbin baseline
+negbin_1 = c(prior(gamma(0.01, 0.01), class = shape), 
+             prior(normal(0, 1), class = b),
+             prior(normal(0, 1), class = Intercept),
+             prior(normal(0, 1), class = sd)) # a wild guess
+
+# can be used for all interactions (without thinking)
+negbin_01 <- c(prior(gamma(0.01, 0.01), class = shape), 
+              prior(normal(0, 1), class = b),
+              prior(normal(0, 1), class = sd)) # a wild guess
+
+
+
+```
+
+# sample prior only 
+Some warnings and divergences. 
+
+```{r, include=FALSE}
+
+## baseline 
+negbin_prior_0 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_0,
+  prior = negbin_0,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/negbin_prior_0"
+)
+
+## baseline 
+negbin_prior_1 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_1,
+  prior = negbin_1,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/negbin_prior_1"
+)
+
+## baseline 
+negbin_prior_01 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_01,
+  prior = negbin_01,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/negbin_prior_01"
+)
+
+
+
+```
+
+# check priors
+
+```{r}
+
+prior_check <- function(model, ndraws, title, xmax){
+  
+  pp_check(model, 
+           ndraws = ndraws) +
+    labs(title = title) + 
+    theme_minimal() + 
+    xlim(0, xmax)
+  
+} 
+
+```
+
+```{r}
+
+prior_check(negbin_prior_0, 100, "No Intercept (x cutoff: 25)", 25)
+prior_check(negbin_prior_1, 100, "Intercept (x cutoff: 25)", 25)
+prior_check(negbin_prior_01, 100, "0 + Intercept (x cutoff: 25)", 25)
+
+```
+
+# fit models 
+
+```{r}
+
+## baseline 
+negbin_post_0 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_0,
+  prior = negbin_0,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/negbin_post_0"
+)
+
+## baseline 
+negbin_post_1 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_1,
+  prior = negbin_1,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/negbin_post_1"
+)
+
+## baseline 
+negbin_post_01 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_01,
+  prior = negbin_01,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/negbin_post_01"
+)
+
+
+```
+
+# check traces
+
+```{r}
+
+# some auto-correlation
+# effect almost entirely in random effect
+plot(negbin_post_0, N = 3)
+
+```
+
+
+```{r}
+
+# some auto-correlation
+# effect almost entirely in random effect
+plot(negbin_post_1, N = 3)
+
+```
+
+```{r}
+
+# same issues 
+plot(negbin_post_01, N = 3)
+
+```
+
+Seems like the issue is not the particular specification: 
+This post explains why it is problematic to have random effect for single observation: 
+https://stats.stackexchange.com/questions/242821/how-will-random-effects-with-only-1-observation-affect-a-generalized-linear-mixe
+
+# Try with random effect per group (i.e. experiment + control) 
+
+## create the variable (as factor)
+
+```{r}
+
+d <- d %>%
+  mutate(id_match = as_factor(match_group))
+
+```
+
+# new model formulae
+
+```{r}
+
+f_team_match_0 <- bf(c_5 ~ 0 + condition_fct + condition_fct:teamsize_scaled + (1|id_match))
+f_team_match_1 <- bf(c_5 ~ 1 + condition_fct + condition_fct:teamsize_scaled + (1|id_match))
+f_team_match_01 <- bf(c_5 ~ 0 + Intercept + condition_fct + condition_fct:teamsize_scaled + (1|id_match))
+
+```
+
+# prior 
+
+```{r}
+
+## baseline 
+negbin_prior_match_0 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_match_0,
+  prior = negbin_0, # same prior 
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/negbin_prior_match_0"
+)
+
+## baseline 
+negbin_prior_match_1 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_match_1,
+  prior = negbin_1,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/negbin_prior_match_1"
+)
+
+## baseline 
+negbin_prior_match_01 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_match_01,
+  prior = negbin_01,
+  sample_prior = "only",
+  file = "/work/50114/MAG/modeling/models/negbin_prior_match_01"
+)
+
+```
+
+# prior check 
+A few divergent transitions (for all of them, between 7-9/4000)
+
+```{r}
+
+prior_check(negbin_prior_0, 100, "No Intercept (x cutoff: 25)", 25)
+prior_check(negbin_prior_1, 100, "Intercept (x cutoff: 25)", 25)
+prior_check(negbin_prior_01, 100, "0 + Intercept (x cutoff: 25)", 25)
+
+```
+
+# fit models 
+a few pareto_k > 0.7 (but few compared to above). 
+
+```{r}
+## baseline 
+negbin_post_match_0 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_match_0,
+  prior = negbin_0,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/negbin_post_match_0"
+)
+
+## baseline 
+negbin_post_match_1 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_match_1,
+  prior = negbin_1,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/negbin_post_match_1"
+)
+
+## baseline 
+negbin_post_match_01 <- fit_model(
+  family = negbinomial(), 
+  formula = f_team_match_01,
+  prior = negbin_01,
+  sample_prior = TRUE,
+  file = "/work/50114/MAG/modeling/models/negbin_post_match_01"
+)
+
+```
+
+# traces
+Looks MUCH better now than before. 
+
+```{r}
+
+# looks pretty good. 
+plot(negbin_post_match_0, N = 3)
+
+```
+
+```{r}
+
+# same as above 
+plot(negbin_post_match_1, N = 3)
+```
+
+```{r}
+
+# slightly different: might be more appropriate? 
+plot(negbin_post_match_01, N = 3)
+
+```
+
+# check estimates
+More effective samples for intercept models.
+No Rhat issues, looks pretty good. 
+Not strictly "significant" given 95% CI, but close -- 
+and also stronger effect of teamsize (although problematic because of outlier) --
+connected with the pareto k issue. 
+
+```{r}
+
+print(negbin_post_match_0)
+print(negbin_post_match_1) # more effective samples 
+print(negbin_post_match_01) 
+
+```
+
+# plot implications
+
+```{r}
+
+y <- d$c_5
+y_0 <- posterior_predict(negbin_post_match_0, draws = 500)
+y_1 <- posterior_predict(negbin_post_match_1, draws = 500)
+y_01 <- posterior_predict(negbin_post_match_01, draws = 500)
+
+```
+
+## no intercept 
+looks pretty good. 
+a lot of uncertainty around 0 and 1 still. 
+
+```{r}
+ppc_dens_overlay(y, y_0[1:50, ]) + xlim(0, 50)
+ppc_hist(y, y_0[1:5, ]) + xlim(-1, 50)
+```
+
+## regular intercept
+Perhaps a bit worse (e.g. with the undershoot at around c_5 = 5). 
+
+```{r}
+ppc_dens_overlay(y, y_1[1:50, ]) + xlim(0, 50)
+ppc_hist(y, y_1[1:5, ]) + xlim(-1, 50)
+```
+
+## 0 + Intercept
+Looks more or less the same.
+
+```{r}
+ppc_dens_overlay(y, y_01[1:50, ]) + xlim(0, 50)
+ppc_hist(y, y_01[1:5, ]) + xlim(-1, 50)
+```
+
+# pareto k issues 
+https://bookdown.org/content/4857/monsters-and-mixtures.html
+
+## no intercept 
+mainly studies that are (relatively) low teamsize and high citation
+```{r}
+
+d %>% 
+  mutate(k = negbin_post_match_0$criteria$loo$diagnostics$pareto_k) %>% 
+  filter(k > .7) %>% 
+  select(c_5, teamsize_scaled, condition_fct, id_match, k)
+
+```
+
+## 1 + ...
+some of the same here, mainly studies with high c_5 and low teamsize. 
+
+```{r}
+
+d %>% 
+  mutate(k = negbin_post_match_1$criteria$loo$diagnostics$pareto_k) %>% 
+  filter(k > .7) %>% 
+  select(c_5, teamsize_scaled, condition_fct, id_match, k)
+
+```
+
+
+## 0 + Intercept 
+Seems to handle influential observations much better.
+Good explanation for all of the outliers: 
+(1) the two control studies are high influence because they are the same (fix earlier in pipeline)
+(2) the experiment study is high influence because there are very few studies with high teamsize (could do log-transformation) and the corresponding control study has zero citations... so this has an outsize influence on the interaction with condition and teamsize. 
+
+```{r}
+
+# two studies that are the same in control (issue to be resolved earlier in the pipeline).
+# the outlier study (experiment) which is max in teamsize and also extremely high citation
+# whereas the 
+d %>% 
+  mutate(k = negbin_post_match_01$criteria$loo$diagnostics$pareto_k) %>% 
+  filter(k > .7) %>% 
+  select(c_5, teamsize_scaled, condition_fct, id_match, k)
+
+```
+
+# Quick model comparison
+Basically no difference, but appears to prefer the intercept models. 
+Do we know why that is? 
+
+```{r}
+
+loo_compare(negbin_post_match_0,
+            negbin_post_match_1,
+            negbin_post_match_01)
+
+loo_model_weights(negbin_post_match_0,
+                  negbin_post_match_1,
+                  negbin_post_match_01)
+```
+
+
+

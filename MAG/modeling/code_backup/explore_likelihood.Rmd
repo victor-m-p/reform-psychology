@@ -1,0 +1,320 @@
+---
+title: "explore likelihood"
+author: "Victor Møller Poulsen"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, include=FALSE}
+
+# consider pacman
+install.packages("pacman") 
+library(pacman)
+
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
+
+# set up cmdstanr 
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+
+```
+
+# load data 
+
+```{r}
+
+# check data
+d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_coded = ifelse(condition == "experiment", 1, 0),
+         condition_fct = as_factor(condition), 
+         teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
+         days_after_2010_scaled = days_after_2010/max(days_after_2010),
+         id_fct = as_factor(PaperId)) %>% # because min = 0
+  glimpse()
+
+
+```
+
+# read models (from fit_likelihood.Rmd)
+
+```{r}
+
+zip_prior <- readRDS("/work/50114/MAG/modeling/models/zip_prior.rds")
+zip_post <- readRDS("/work/50114/MAG/modeling/models/zip_post.rds")
+negbin_prior <- readRDS("/work/50114/MAG/modeling/models/negbin_prior.rds")
+negbin_post <- readRDS("/work/50114/MAG/modeling/models/negbin_post.rds")
+zinegbin_prior <- readRDS("/work/50114/MAG/modeling/models/zinegbin_prior.rds")
+zinegbin_post <- readRDS("/work/50114/MAG/modeling/models/zinegbin_post.rds")
+
+```
+
+# prior predictive checks 
+
+```{r}
+
+prior_check <- function(model, ndraws, title, xmax){
+  
+  pp_check(model, 
+           ndraws = ndraws) +
+    labs(title = title) + 
+    theme_minimal() + 
+    xlim(0, xmax)
+  
+} 
+
+```
+
+## ZIP prior
+
+```{r}
+
+prior_check(zip_prior, 100, "zip prior (x cutoff: 25)", 25)
+
+```
+
+## negative binomial prior
+
+```{r}
+
+prior_check(negbin_prior, 100, "negative binomial prior (x cutoff: 25)", 25)
+
+```
+
+## zero-inflated negative binomial prior 
+
+```{r}
+prior_check(zinegbin_prior, 100, "zero-inflated negative binomial prior (x cutoff: 25)", 25)
+```
+
+# plot traces 
+reasonable for negative binomial and for zero-inflated negative binomial 
+
+```{r}
+
+plot(zip_post, N = 3) # gives weird stuff 
+plot(negbin_post, N = 3) # much more reasonable
+plot(zinegbin_post, N = 3) # also reasonable 
+
+```
+
+# check posterior sampling 
+https://mc-stan.org/bayesplot/articles/graphical-ppcs.html
+
+```{r}
+
+y <- d$c_5
+y_zip <- posterior_predict(zip_post, draws = 500)
+y_negbin <- posterior_predict(negbin_post, draws = 500)
+y_zinegbin <- posterior_predict(zinegbin_post, draws = 500)
+
+```
+
+# overlay & histogram
+
+## ZIP
+we see the key issue again here... 
+we have two distributions which is not reflective of the actual data. 
+
+```{r}
+
+ppc_dens_overlay(y, y_zip[1:50, ]) + xlim(0, 50)
+ppc_hist(y, y_zip[1:5, ]) + xlim(-1, 50)
+
+
+```
+
+## negative binomial 
+looks really good. 
+has a hard time figuring out the correct number of 0s. 
+
+```{r}
+
+ppc_dens_overlay(y, y_negbin[1:50, ]) + xlim(01, 50)
+ppc_hist(y, y_negbin[1:5, ]) + xlim(-1, 50)
+
+
+```
+
+## zero-inflated negative binomial 
+looks really good. 
+very similar to negbin.
+
+```{r}
+
+ppc_dens_overlay(y, y_zinegbin[1:50, ]) + xlim(-1, 50)
+ppc_hist(y, y_zinegbin[1:5, ]) + xlim(-1, 50)
+
+```
+
+# more PPC 
+
+## ability of models to produce zeros 
+All models pretty good at producing the right amount of zeros. 
+
+```{r}
+
+prop_zero <- function(x) mean(x == 0)
+ppc_stat(y, y_zip, stat = "prop_zero", binwidth = 0.005)
+ppc_stat(y, y_negbin, stat = "prop_zero", binwidth = 0.005)
+ppc_stat(y, y_zinegbin, stat = "prop_zero", binwidth = 0.005)
+
+```
+
+## ability to generate max 
+Both negative binomial and zero-inflated negative binomial has some crazy outliers here, but looks pretty reasonable. 
+
+```{r}
+
+ppc_stat(y, y_zip, stat = "max")
+ppc_stat(y, y_negbin, stat = "max")
+ppc_stat(y, y_zinegbin, stat = "max")
+
+```
+
+## by group
+
+They all predict "too much" of the same for each group (although might be good that they are more sceptical).
+Best model seems to be the negative binomial. 
+
+```{r}
+
+ppc_stat_grouped(y, y_zip, group = d$condition_fct, stat = "prop_zero") # predicts same for groups 
+ppc_stat_grouped(y, y_negbin, group = d$condition_fct, stat = "prop_zero")
+ppc_stat_grouped(y, y_zinegbin, group = d$condition_fct, stat = "prop_zero")
+
+```
+
+# check summary
+Only "interesting" thing here is that large teamsize seems to have a stronger effect for replication studies. 
+Probably nothing (as we will see later) & definitely not significant. 
+However, there has been a lot of attention on the large replication studies (e.g. ManyLabs). 
+
+```{r}
+
+summary(zip_post)
+summary(negbin_post)
+summary(zinegbin_post)
+
+```
+
+# plot model fit (focus on negative binomial)
+## notes
+### effect of interaction probably driven by the one outlier (more data and/or robust model?). 
+### could also consider doing something else to teamsize (e.g. log) - would make sense that it is not a linear relationship.
+### also consider what McElreath does with forcing it through origin. 
+### add_fitted_draws() is now add_epred_draws(). 
+
+https://mjskay.github.io/tidybayes/reference/add_predicted_draws.html
+
+## fitted draws 
+Clear that there is a lot of weight for two large studies, 
+where the "control" is not cited & the experiment is cited a lot. 
+Really seems to drive the (probably spurious) effect. 
+
+```{r}
+
+# with draws 
+d %>%
+  group_by(condition_fct) %>%
+  data_grid(teamsize_scaled = seq_range(teamsize_scaled, n = 101)) %>%
+  add_epred_draws(negbin_post, ndraws = 100) %>% # same as fitted 
+  ggplot(aes(x = teamsize_scaled, y = c_5, color = ordered(condition_fct))) +
+  geom_line(aes(y = .epred, group = paste(condition_fct, .draw)), alpha = 0.25) +
+  geom_point(data = d)
+
+```
+
+## fitted CI 
+
+```{r}
+
+d %>%
+  group_by(condition_fct) %>%
+  data_grid(teamsize_scaled = seq_range(teamsize_scaled, n = 101)) %>%
+  add_epred_draws(negbin_post) %>% # same as fitted 
+  ggplot(aes(x = teamsize_scaled, y = c_5, color = ordered(condition_fct))) +
+  stat_lineribbon(aes(y = .epred), .width = c(.95, .8, .5), alpha = 0.25) +
+  geom_point(data = d) + 
+  scale_fill_brewer(palette = "Greys")
+
+```
+
+## predicted draws
+Zero is the most common value for almost any value of teamsize & condition. 
+Not super informative here. 
+Perhaps more interesting with draws? 
+
+```{r}
+
+# does a poor job predicting (but makes sense that 0 is always the value to predict...)
+d %>%
+  group_by(condition_fct) %>%
+  data_grid(teamsize_scaled = seq_range(teamsize_scaled, n = 101)) %>%
+  add_predicted_draws(negbin_post) %>% # same as fitted 
+  ggplot(aes(x = teamsize_scaled, y = c_5, color = ordered(condition_fct))) +
+  stat_lineribbon(aes(y = .prediction), .width = c(.8, .5), alpha = 0.25) +
+  geom_point(data = d) + 
+  scale_fill_brewer(palette = "Greys")
+
+```
+
+# HDI for parameters
+
+```{r}
+
+mcmc_hdi <- function(fit, title){
+  
+  mcmc_areas(
+    fit,
+    pars = c("b_condition_fctexperiment",
+             "b_condition_fctcontrol",
+             "b_condition_fctexperiment:teamsize_scaled",
+             "b_condition_fctcontrol:teamsize_scaled"),
+    prob = 0.8, # 80% intervals
+    prob_outer = 0.99, # 99%
+    point_est = "mean") + 
+    theme_minimal() + 
+    ggtitle(title)
+  
+}
+
+```
+
+```{r}
+
+mcmc_hdi(negbin_post, "negative binomial HDI")
+
+```
+
+# model comparison 
+consider criterion, i.e. waic, loo, bayes_R2 (I think the latter is for stacking weights?). 
+best at the moment is actually the zero-inflated negative binomial, but very close to negative binomial.
+should probably keep both in mind moving forward (as they both looked reasonable). 
+
+```{r}
+# add criterions 
+zip_post <- add_criterion(zip_post, 
+                          criterion = c("loo", "bayes_R2"))
+
+negbin_post <- add_criterion(negbin_post, 
+                             criterion = c("loo", "bayes_R2"))
+
+zinegbin_post <- add_criterion(zinegbin_post, 
+                               criterion = c("loo", "bayes_R2")) # one problematic observation.
+# run loo compare
+loo_compare(zip_post,
+            negbin_post,
+            zinegbin_post)
+
+# also uses stacking (and gives the same as pyMC3)
+loo_model_weights(zip_post,
+                  negbin_post,
+                  zinegbin_post)
+
+```
+
+# Check influential observations (pareto k) 
+## check recoded (of rethinking)

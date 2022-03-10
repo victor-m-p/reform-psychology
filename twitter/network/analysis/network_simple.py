@@ -6,6 +6,12 @@ to-do:
 * pick the right colors 
 * (potentially) higher settings for the plot where we do not zoom
 * write to pdf instead of png 
+* robust in terms of network size (scaling)
+* check if they are GCC
+* n_labels in main so that it gets saved. 
+
+time: 
+* N = 23719, execution: 4.5 minutes. 
 '''
 
 # packages
@@ -14,14 +20,35 @@ import numpy as np
 import re
 import networkx as nx 
 import matplotlib.pyplot as plt 
+import timeit
 
 # visual setup 
 
 # load file 
-df = pd.read_csv("/work/50114/twitter/data/network/preprocessed/bropenscience_edgelist_simple.csv")
+starttime = timeit.default_timer()
+query = 'openscience'
+df = pd.read_csv(f"/work/50114/twitter/data/network/preprocessed/{query}_edgelist_simple.csv")
+
+# get maximum, important for dividing. 
+def get_maximum(df): 
+    max_edge = df["weight"].max() 
+    df_from = df.groupby('username_from')['weight'].sum().reset_index().rename(columns = {
+        'username_from': 'username',
+        'weight': 'weight_from'}).fillna(0)
+    df_to = df.groupby('username_to')['weight'].sum().reset_index().rename(columns = {
+        'username_to': 'username',
+        'weight': 'weight_to'}).fillna(0)
+    df_gathered = df_from.merge(df_to, on = 'username', how = 'outer').fillna(0)
+    df_gathered = df_gathered.assign(total_weight = lambda x: x["weight_from"] + x["weight_to"])
+    max_node = df_gathered["total_weight"].max()
+    return max_edge, max_node
+
+df = df[df["weight"] > 5]
+print(f"length: {len(df)}")
+max_edge, max_node = get_maximum(df)
 
 # networkx 
-G = nx.from_pandas_edgelist(df,source='username_from',target='username_to', edge_attr='weight', create_using=nx.DiGraph())
+G = nx.from_pandas_edgelist(df, source='username_from', target='username_to', edge_attr='weight', create_using=nx.DiGraph())
 
 #### edge attributes ####
 
@@ -69,7 +96,7 @@ def get_labels(G, type_str, type_lst, n_labels):
     
     return labeldict 
 
-n_labels = 10
+n_labels = 40
 labeldict_degreew = get_labels(G, 'weighted_degree', weighted_degree, n_labels)
 
 #### author information #### 
@@ -116,11 +143,12 @@ def plot_network(G, node_size_lst, edge_width_lst, node_divisor, edge_divisor, t
     plt.savefig(f"{outfolder}/{filename}_seed{seed}_k{k}_labels{labels}.png", bbox_inches='tight')
 
 # create the plot where we zoom
-node_divisor = 2
-edge_divisor = 10
-title = 'bropenscience network'
+node_divisor = max_node / 1800 # (2) max_node / (max_node/2)
+edge_divisor = max_edge / 3 # (10) max_edge / (max_edge/10)
+
+title = f'{query} network'
 outfolder = '/work/50114/twitter/fig/network/simple'
-filename = 'bropenscience'
+filename = f'{query}'
 
 plot_network(
     G = G, 
@@ -134,12 +162,18 @@ plot_network(
     labeldict = labeldict_degreew
 )
 
+endtime = timeit.default_timer()
+totaltime = endtime - starttime 
+print(f"execution time: {round(totaltime/60, 2)} minutes")
+
+
 # create the plot where we do not zoom
-node_divisor = 1
-edge_divisor = 2
-title = 'bropenscience network'
+node_divisor = max_node / 900 # (1)
+edge_divisor = max_edge / 8 # (2)
+
+title = f'{query} network'
 outfolder = '/work/50114/twitter/fig/network/simple'
-filename = 'bropenscience'
+filename = f'{query}'
 
 plot_network(
     G = G, 

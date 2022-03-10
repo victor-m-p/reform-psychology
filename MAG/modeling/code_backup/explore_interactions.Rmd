@@ -1,0 +1,73 @@
+---
+title: "Explore Interactions"
+author: "Victor Møller Poulsen"
+date: "2/18/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# consider pacman
+install.packages("pacman") 
+library(pacman)
+
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
+
+# set up cmdstanr 
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+```
+
+# load data 
+
+```{r, include=FALSE}
+
+# check data
+d <- read_csv("/work/50114/MAG/data/modeling/psych_replication_matched.csv") %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_coded = ifelse(condition == "experiment", 1, 0),
+         condition_fct = as_factor(condition), 
+         teamsize_scaled = (n_authors-min(n_authors))/(max(n_authors)-min(n_authors)),
+         days_after_2010_scaled = days_after_2010/max(days_after_2010),
+         id_fct = as_factor(PaperId)) %>% # because min = 0
+  glimpse()
+
+
+```
+
+# read models (from fit_interactions.Rmd)
+Here, only exploring the posteriors
+
+```{r, include=FALSE}
+
+# baseline models
+negbin_post_baseline <- readRDS("/work/50114/MAG/modeling/models/negbin_post_baseline.rds")
+zinegbin_post_baseline <- readRDS("/work/50114/MAG/modeling/models/zinegbin_post_baseline.rds")
+
+# teamsize interaction
+negbin_post_team_int <- readRDS("/work/50114/MAG/modeling/models/negbin_post_team_int.rds")
+zinegbin_post_team_int <- readRDS("/work/50114/MAG/modeling/models/zinegbin_post_team_int.rds")
+
+# teamsize interaction + main effect
+negbin_post_team_full <- readRDS("/work/50114/MAG/modeling/models/negbin_post_team_full.rds")
+zinegbin_post_team_full <- readRDS("/work/50114/MAG/modeling/models/zinegbin_post_team_full.rds")
+
+# teamsize interaction & days interaction
+negbin_post_team_days <- readRDS("/work/50114/MAG/modeling/models/negbin_post_team_days.rds")
+zinegbin_post_team_days <- readRDS("/work/50114/MAG/modeling/models/zinegbin_post_team_days.rds")
+
+```
+
+# traces
+
+```{r}
+
+plot(negbin_post_baseline) # looks ok (as it should from explore_likelihood)
+plot(zinegbin_post_baseline) # looks ok (as it should from explore_likelihood)
+plot(negbin_post_team_int, N = 10) # bad, everything attributed to intercept (because we are lacking intercept?)
+plot(zinegbin_post_team_int, N = 10) # ok for some parameters, but overall still bad. 
+plot(negbin_post_team_full, N = 10) # chains almost ok, but how do I interpret this now?
+plot(zinegbin_post_team_full, N = 10) # do I need the intercept now? -- I think this is what I should actually check (i.w. ways of specifying, 1 + ..., 0 + Intercept + ..., 0 + ...)
+
+```
+

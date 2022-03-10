@@ -9,6 +9,8 @@ twarc2 configure # then paste bearer
 (2) run_multiple_twarc.sh: for running multiple queries (relies on the .txt files and the 'twarc2 searches' functionality)
 (3) run_single_twarc.sh: for running single query (relies on input and the 'twarc2 search' functionality)
 (4) start_date = 2007-01-01, end_date = 2022-01-01
+(5) e.g.: 
+--> bash run_multiple_twarc.sh replicationcrisis res/query_replication_crisis.txt 2007-01-01 2022-01-01
 
 # nlp 
 

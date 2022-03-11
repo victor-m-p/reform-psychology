@@ -19,4 +19,3 @@ outname2=/work/50114/twitter/data/raw/twarc_flat/$querryname.ndjson
 # run main file
 twarc2 searches --combine-queries --start-time $start_dates --end-time $end_dates --archive $querry $outname1
 twarc2 flatten $outname1 $outname2
-

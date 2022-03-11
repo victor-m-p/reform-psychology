@@ -225,7 +225,7 @@ plot_frequency(
     color = c_bropenscience.get("node_color"),
     query = query,
     outpath = '/work/50114/twitter/fig/network/attributes',
-    figsize = (11.69, 4),
+    figsize = (11, 4),
     dpi = dpi,
     hue = None
 )

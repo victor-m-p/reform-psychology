@@ -5,10 +5,8 @@ Tricky things about matching:
 1) loop strategy does not ensure best match
 2) would be good to match approximately on two columns rather than only on one (makes it hard to match those with high n. authors)
 
-For now based on Journal only and 2010-2021. 
-
-usage e.g.: 
-python query_main.py -i ../data/raw/ -f 'psychology' -q 'replicat' -o ../data/modeling/
+or through run_query.sh:
+bash query_main psychology replicat
 
 '''
 
@@ -69,10 +67,10 @@ def get_subset(df, fos):
         fos = "political science"
 
     filtered_df = df[
-    (df["NormalizedName"] == f'{fos}') & 
+    (df["NormalizedName"] == fos) & 
     ((df["DocType"] == 'Journal') | (df["DocType"] == 'Conference')) & # this needs to be changed to Journal and Conference when we get the new data. 
     (df["Date"] >= datetime.date(2005, 1, 1)) & # this needs to be changed as well (to 2005)
-    (df["Date"] <= datetime.date(2016, 1, 1))
+    (df["Date"] < datetime.date(2016, 1, 1))
     ]
 
     return filtered_df
@@ -492,7 +490,7 @@ def main(inpath, field, query, outpath):
     # write csv
     print(f"--> writing file")
     df_ready.to_csv(f"{outpath}/{field}_{query}_matched.csv", index = False) 
-    print(f"--- finished: query main")
+    print(f"--- finished: query main ---")
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

@@ -189,31 +189,61 @@ for (i in 1:length(priSD)){
 ```{r}
 
 color_scheme_set("orange")
+clrs = color_scheme_get("orange")
 theme_set(theme_classic())
 outpath = "/work/50114/MAG/fig/modeling/replication/prior_sensitivity/"
+width = 8
+height = 4
 
 ```
+
+```{r}
+
+light_color = clrs[3]$mid
+dark_color = clrs[6]$dark_highlight
+
+```
+
+
+
+```{r}
+int_data <- tibble(priSD, int_ci_lower, int_ci_upper, int_ci_est) %>% 
+  mutate(condition = case_when(priSD == 0.5 ~ 'our_prior', TRUE ~ 'other_prior')) %>%
+  glimpse()
+```
+
 
 ## intercept difference
 
 ```{r}
+int_data <- tibble(priSD, int_ci_lower, int_ci_upper, int_ci_est) %>%
+  mutate(condition = case_when(priSD == 0.5 ~ 'Prior (main model)', TRUE ~ 'Prior (sensitivity)')) %>%
+  glimpse()
+```
+
+
+```{r}
 
 # get data 
-int_data <- tibble(priSD, int_ci_lower, int_ci_upper, int_ci_est) 
+int_data <- tibble(priSD, int_ci_lower, int_ci_upper, int_ci_est) %>%
+  mutate(condition = case_when(priSD == 0.5 ~ 'Prior (main model)', TRUE ~ 'Prior (sensitivity)'))
 
 # plot 
-p <- int_data %>% ggplot(aes(x = priSO, y = int_ci_est)) + 
+p <- int_data %>% ggplot(aes(x = priSD, y = int_ci_est, color = condition)) + 
   geom_point(size = 3) + 
-  geom_pointrange(ymin = team_ci_lower, ymax = team_ci_upper) + 
-  ylim(-0.5, 1.5) +
+  geom_pointrange(ymin = int_ci_lower, ymax = int_ci_upper) + 
+  ylim(-0.3, 1) +
   labs(x="Standard deviation of intercept prior",
        y="Posterior estimate of intercept difference", 
        title="Sensitivity analysis (intercept)") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  scale_color_manual(
+    breaks = c("Prior (main model)", "Prior (sensitivity)"),
+    values = c(dark_color, light_color))
 
 # save 
 outname = paste0(outpath, "intercept.pdf")
-ggsave(filename = outname, plot = p)
+ggsave(filename = outname, plot = p, width = width, height = height)
 
 ```
 
@@ -222,21 +252,28 @@ ggsave(filename = outname, plot = p)
 ```{r}
 
 # get data 
-team_data <- tibble(priSD, team_ci_lower, team_ci_upper, team_ci_est)
+team_data <- tibble(priSD, team_ci_lower, team_ci_upper, team_ci_est) %>% 
+  mutate(condition = case_when(priSD == 0.5 ~ 'Prior (main model)', TRUE ~ 'Prior (sensitivity)'))
 
 # plot 
-p <- team_data %>% ggplot(aes(x = priSD, y = team_ci_est)) + 
+p <- team_data %>% ggplot(aes(x = priSD, y = team_ci_est, color = condition)) + 
   geom_point(size = 3) + 
   geom_pointrange(ymin = team_ci_lower, ymax = team_ci_upper) + 
   ylim(-0.5, 0.25) +
   labs(x="Standard deviation of interaction prior",
        y="Posterior estimate for interaction difference", 
        title="Sensitivity analysis (teamsize)") + 
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  scale_color_manual(
+    breaks = c("Prior (main model)", "Prior (sensitivity)"),
+    values = c(dark_color, light_color))
 
 # save 
 outname = paste0(outpath, "teamsize.pdf")
-ggsave(filename = outname, plot = p)
+ggsave(filename = outname, 
+       plot = p,
+       width = width,
+       height = height)
 
 ```
 
@@ -245,21 +282,28 @@ ggsave(filename = outname, plot = p)
 ```{r}
 
 # get data
-year_data <- tibble(priSD, year_ci_lower, year_ci_upper, year_ci_est)
+year_data <- tibble(priSD, year_ci_lower, year_ci_upper, year_ci_est) %>%
+  mutate(condition = case_when(priSD == 0.5 ~ 'Prior (main model)', TRUE ~ 'Prior (sensitivity)'))
 
 # plot 
-year_data %>% ggplot(aes(x = priSD, y = year_ci_est)) + 
+p <- year_data %>% ggplot(aes(x = priSD, y = year_ci_est, color = condition)) + 
   geom_point(size = 3) + 
   geom_pointrange(ymin = year_ci_lower, ymax = year_ci_upper) + 
-  ylim(-0.5, 0.25) +
+  ylim(-0.1, 0.2) +
   labs(x="Standard deviation of interaction prior",
        y="Posterior estimate for interaction difference", 
        title="Sensitivity analysis (year after 2005)") + 
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) + 
+    scale_color_manual(
+    breaks = c("Prior (main model)", "Prior (sensitivity)"),
+    values = c(dark_color, light_color))
 
 # save 
 outname = paste0(outpath, "year.pdf")
-ggsave(filename = outname, plot = p)
+ggsave(filename = outname, 
+       plot = p,
+       width = width,
+       height = height)
 
 ```
 

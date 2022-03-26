@@ -1,0 +1,119 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r}
+
+
+# consider pacman
+install.packages("pacman") 
+library(pacman)
+
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
+
+# set up cmdstanr if it is not already present
+if (!require('cmdstanr')){
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+}
+
+setwd("/work/50114/MAG/modeling/replication_keyword/code")
+source("fun_helper.R")
+
+```
+
+replication keyword
+
+```{r}
+
+# check data
+rep_key <- read_csv("/work/50114/MAG/data/modeling/psychology_replicat_matched.csv") %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_fct = as_factor(condition), 
+         id_match = as_factor(match_group),
+         id_dct = as_factor(PaperId),
+         year_after_2005 = Year - 2005) %>% 
+  glimpse()
+
+```
+
+replication fos 
+
+```{r}
+
+rep_fos <- read_csv("/work/50114/MAG/data/modeling/psychology_replication_matched.csv") %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_fct = as_factor(condition), 
+         id_match = as_factor(match_group),
+         id_dct = as_factor(PaperId),
+         year_after_2005 = Year - 2005) %>% 
+  glimpse()
+
+```
+
+reproducibility fos
+
+```{r}
+
+ro_fos <- read_csv("/work/50114/MAG/data/modeling/psychology_reproducibility_matched.csv") %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_fct = as_factor(condition), 
+         id_match = as_factor(match_group),
+         id_dct = as_factor(PaperId),
+         year_after_2005 = Year - 2005) %>% 
+  glimpse()
+
+```
+
+get mean at 0
+
+```{r}
+
+rep_key %>% filter(n_authors == 1) %>%
+  summarize(mean = mean(c_5)) %>%
+  glimpse()
+
+```
+
+```{r}
+
+rep_fos %>% filter(n_authors == 1) %>%
+  summarize(mean = mean(c_5)) %>%
+  glimpse()
+
+```
+
+```{r}
+
+ro_fos %>% filter(n_authors == 1) %>%
+  summarize(mean = mean(c_5)) %>%
+  glimpse()
+
+```
+
+```{r}
+
+rep_fos %>% ggplot(aes(x = n_authors, y = c_5, color = condition)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm')
+
+```
+
+```{r}
+
+ro_fos %>% ggplot(aes(x = n_authors, y = c_5, color = condition)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm')
+
+```
+
+```{r}
+
+rep_key %>% ggplot(aes(x = n_authors, y = c_5, color = condition)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm')
+
+```
+

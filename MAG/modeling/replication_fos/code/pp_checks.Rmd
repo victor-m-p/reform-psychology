@@ -1,0 +1,151 @@
+---
+title: "Prior/Posterior Predictive Checks"
+author: "Victor M. Poulsen" 
+output: html_document
+---
+
+# Path setup
+
+```{r}
+
+wd_code = "/work/50114/MAG/modeling/replication_fos/code"
+inpath_csv <- "/work/50114/MAG/data/modeling/"
+infile <- "psychology_replication_matched.csv"
+outpath <- "/work/50114/MAG/fig/modeling/replication_fos/pp_checks/"
+inpath_rds <- "/work/50114/MAG/modeling/replication_fos/models/main_model/"
+inpath_post <- paste0(inpath_rds, "m_post.rds")
+inpath_prior <- paste0(inpath_rds, "m_prior.rds")
+
+```
+
+```{r}
+
+color_scheme_set("orange")
+theme_set(theme_classic())
+
+theme_set(theme_classic())
+title = 18
+label = 14
+tick = 12 # same as legend
+
+```
+
+
+```{r setup, include=FALSE}
+
+# consider pacman
+install.packages("pacman") 
+library(pacman)
+
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr, latex2exp, ggpubr)
+
+# set up cmdstanr if it is not already present
+if (!require('cmdstanr')){
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+}
+
+setwd(wd_code)
+source("fun_helper.R")
+
+```
+
+
+# Read data
+
+```{r, include = FALSE}
+
+csv_path <- paste0(inpath_csv, infile)
+
+# check data
+d <- read_csv(csv_path) %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_fct = as_factor(condition), 
+         id_match = as_factor(match_group),
+         id_dct = as_factor(PaperId),
+         year_after_2005 = Year - 2005) %>% 
+  glimpse()
+
+```
+
+
+# Read models (RDS) 
+
+```{r}
+
+m_prior <- readRDS(inpath_prior)
+m_post <- readRDS(inpath_post)
+
+```
+
+# get draws 
+
+```{r}
+
+# y: actual data 
+y <- d$c_5 
+
+# yrep: draws from prior and posterior predictive distributions
+yrep_prior <- posterior_predict(m_prior, draws = 500) 
+yrep_post <- posterior_predict(m_post, draws = 500) 
+
+```
+
+
+# Prior predictive checks:
+https://cran.r-project.org/web/packages/bayesplot/vignettes/graphical-ppcs.html
+https://mc-stan.org/bayesplot/reference/PPC-overview.html
+
+## density
+
+```{r}
+
+plot_dens_overlay <- function(y, yrep, label_size, tick_size, n_draws = 50, x_upper = NA){
+  
+  p <- ppc_dens_overlay(y, yrep[1:n_draws, ]) + 
+    xlim(0, x_upper) + 
+    theme(legend.title = element_blank(),
+          axis.text = element_text(size = tick_size),
+          axis.title = element_text(size = label_size),
+          legend.text = element_text(size = tick_size)) 
+  p
+  
+}
+
+```
+
+```{r}
+
+plot_dens_overlay(y, yrep_prior, label, tick)
+plot_dens_overlay(y, yrep_prior, label, tick, x_upper = 50)
+
+```
+
+# posterior predictive checks
+
+## overall 
+
+### density 
+
+```{r}
+
+plot_dens_overlay(y, yrep_post, label, tick)
+plot_dens_overlay(y, yrep_post, label, tick, x_upper = 50)
+
+```
+
+### histogram 
+
+```{r}
+
+
+
+```
+
+
+## grouped 
+
+
+
+

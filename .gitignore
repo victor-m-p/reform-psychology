@@ -6,8 +6,10 @@
 /MAG/Miniconda3-py39_4.9.2-Linux-x86_64.sh
 /MAG/.empty
 /MAG/data
-/MAG/modeling/recoded
-/MAG/modeling/replication/models
+/MAG/modeling/models
+/MAG/modeling/replication_fos/models
+/MAG/modeling/replication_keyword/models
+/MAG/modeling/reproducibility_fos/models
 /twitter/nlp/semantic_kernel/semanticenv
 /twitter/nlp/semantic_kernel/mdl
 /twitter/network/backboning

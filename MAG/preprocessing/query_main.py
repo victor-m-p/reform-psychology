@@ -6,7 +6,10 @@ Tricky things about matching:
 2) would be good to match approximately on two columns rather than only on one (makes it hard to match those with high n. authors)
 
 or through run_query.sh:
-bash query_main psychology replicat
+bash run_query.sh psychology replicat
+
+changelog: 
+* ran "replicat" again (not yet). 
 
 '''
 

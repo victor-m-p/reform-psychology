@@ -1,0 +1,197 @@
+---
+title: "Explore Priors"
+author: "Victor M. Poulsen" 
+output: html_document
+---
+
+# Path setup
+
+```{r setup, include=FALSE}
+
+wd_code = "/work/50114/MAG/modeling/replication_fos/code"
+inpath <- "/work/50114/MAG/modeling/replication_fos/models/main_model/"
+outpath <- "/work/50114/MAG/fig/modeling/replication_fos/pp_checks/"
+inpath_post <- paste0(inpath, "m_post.rds")
+inpath_prior <- paste0(inpath, "m_prior.rds")
+
+```
+
+```{r, include=FALSE}
+
+# consider pacman
+install.packages("pacman") 
+library(pacman)
+p_load(tidyverse, 
+       brms, 
+       ggthemes, 
+       bayesplot, 
+       cowplot, 
+       tidybayes, 
+       modelr, 
+       latex2exp, 
+       ggpubr)
+
+# set up cmdstanr if it is not already present
+if (!require('cmdstanr')){
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+}
+
+install.packages(c("coda","mvtnorm","devtools","loo"))
+library(devtools)
+devtools::install_github("rmcelreath/rethinking")
+```
+
+# Visual setup
+
+```{r}
+
+color_map <- c("Prior" = '#fee6ce', 
+               "Posterior (control)" = '#fdae6b', 
+               "Posterior (experiment)" = '#e6550d')
+
+color_lst <- c('#fee6ce', '#fdae6b', '#e6550d')
+
+theme_set(theme_classic())
+title = 18
+label = 14
+tick = 12 # same as legend
+
+```
+
+```{r}
+color_map
+```
+
+
+# shape (phi) parameter 
+
+```{r}
+rnorm(1000, mean = 5)
+```
+
+```{r}
+
+# n = 10000
+d <- tibble(x = rexp(10000, rate = 1)) %>%
+  ggplot(aes(x = x)) +
+  #geom_histogram(binwidth = .1, fill = "grey60") +
+  geom_ribbon(aes(ymin = 0,
+                  ymax = dexp(x, rate = 1)),
+            fill = color_lst[2],
+            alpha = 1) +
+  stat_pointinterval(aes(y = 0), .width = c(.5, .95)) +
+  #scale_y_continuous(NULL, breaks = NULL) +
+  ggtitle("Prior predictive distribution for exp(1)") +
+  coord_cartesian(xlim = c(0, 5), ylim = (c(0, 1)))
+d
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+d %>% ggplot()
+```
+
+
+## functions for plotting ONLY priors
+NB: only want y-lab for one of them. 
+think about combining & saving. 
+
+```{r}
+
+plot_gamma <- function(title, 
+                     title_size, 
+                     tick_size, 
+                     label_size, 
+                     mu = .01,
+                     gamma = .01,
+                     n = 10000, 
+                     from = 0, 
+                     to = 10, 
+                     by = .01){
+  
+  d <- tibble(x = rethinking::rgamma2(n, mu, theta)) %>%
+    ggplot(aes(x = x)) +
+    geom_ribbon(aes(ymin = 0,
+                    ymax = rethinking::dgamma2(x, mu, theta)),
+              fill = color_lst[2],
+              alpha = 1) +
+    stat_pointinterval(aes(y = 0), .width = c(.5, .95)) +
+    labs(title = TeX("Prior predictive distribution $\\gamma(.01, .01)$"), # should be flex
+         x = TeX("$\\mu$"),
+         y = "Density") + 
+    coord_cartesian(xlim = c(0, 10), ylim = (c(0, 1))) +
+    theme(plot.title = element_text(size = title_size, hjust = 0.5),
+          legend.title = element_blank(),
+          axis.text = element_text(size = tick_size),
+          axis.title = element_text(size = label_size),
+          legend.text = element_text(size = tick_size)) 
+  
+  return(d)
+}
+
+plot_exp <- function(rate, 
+                     title, 
+                     title_size, 
+                     tick_size, 
+                     label_size, 
+                     n = 10000, 
+                     from = 0, 
+                     to = 10, 
+                     by = .01){
+  
+  d <- tibble(x = rexp(n, rate)) %>%
+    ggplot(aes(x = x)) +
+    geom_ribbon(aes(ymin = 0,
+                    ymax = dexp(x, rate = 1)),
+              fill = color_lst[2],
+              alpha = 1) +
+    stat_pointinterval(aes(y = 0), .width = c(.5, .95)) +
+    labs(title = TeX("Prior predictive distribution $\\exp(1)$"), # should be flex
+         x = TeX("$\\mu$"),
+         y = "Density") + 
+    coord_cartesian(xlim = c(0, 10), ylim = (c(0, 1))) +
+    theme(plot.title = element_text(size = title_size, hjust = 0.5),
+          legend.title = element_blank(),
+          axis.text = element_text(size = tick_size),
+          axis.title = element_text(size = label_size),
+          legend.text = element_text(size = tick_size)) 
+  
+  return(d)
+}
+
+```
+
+check plots
+
+```{r}
+p_exp <- plot_exp(rate = 1, 
+                  title = "test",
+                  title_size = title, 
+                  tick_size = tick,
+                  label_size = label)
+
+p_gamma <- plot_gamma(title = "test",
+                      title_size = title,
+                      tick_size = tick,
+                      label_size = label)
+
+plot_grid(p_exp, p_gamma)
+
+```
+
+## to-do
+
+potentially other priors.
+we should not do overlay of actual values (from posterior)
+because we then basically just get an updating check. 
+
+
+
+

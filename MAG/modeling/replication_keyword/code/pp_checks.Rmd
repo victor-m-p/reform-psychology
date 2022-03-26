@@ -1,0 +1,16 @@
+---
+title: "Posterior Predictive Checks"
+author: "Victor M. Poulsen" 
+output: html_document
+---
+
+## path setup
+
+```{r}
+
+inpath_csv = "/work/50114/MAG/data/modeling/psychology_replication_matched.csv"
+wd_code = "/work/50114/MAG/modeling/replication_fos/code"
+outpath_models = "/work/50114/MAG/modeling/replication_fos/models/likelihood_comparison/"
+outpath_plots = '/work/50114/MAG/fig/modeling/replication_fos/likelihood_comparison/'
+
+```

@@ -1,0 +1,8 @@
+---
+title: "Explore Priors"
+author: "Victor M. Poulsen" 
+output: html_document
+---
+
+here we make the plot which shows e.g. shape parameter,
+potentially also other paramters. 

@@ -4,6 +4,12 @@ Actual analysis pipeline for sub-studies
 
 usage e.g.: 
 bash run_subfields.sh psychology openscience
+
+changelog: 
+2022-03-12: small change + addition: 
+* ran "replication" again (2022-03-26)
+* ran "reproducibility" again (2022-03-26)
+* ran "openscience" again (2022-03-26)
 '''
 
 # packages
@@ -300,7 +306,6 @@ def get_citations(df_ref, df_long_format):
 
     return df_long_na, df_long_cited
 
-
 # check whether all citations are after publication
 ## this is actually where we loose data. 
 ## we are lacking dates for a number of the papers that cite here. 
@@ -441,7 +446,7 @@ def main(inpath, field, subfield, outpath):
     df_meta_clean, df_paa_clean, df_ref_clean = clean_data(df_meta, df_paa, df_ref)
 
     # get subset and control
-    df_subfield_2016, df_control_2016 = get_experiment_control(df_meta_clean, df_paa, df_subfield, field)
+    df_subfield_2016, df_control_2016 = get_experiment_control(df_meta_clean, df_paa_clean, df_subfield, field)
 
     # clean records 
     df_control_clean = clean_records(df_control_2016, "PaperId_control", "PaperTitle_control")
@@ -463,6 +468,10 @@ def main(inpath, field, subfield, outpath):
 
     # citation delay
     df_outside_five, df_inside_five = citation_delay(df_meta_clean, df_long_cited, df_long_na)
+
+    # write csv for EDA
+    print(f"--> writing EDA file")
+    df_inside_five.to_csv(f"{outpath}/{field}_{subfield}_EDA.csv", index = False)
 
     # days after 2010
     df_inside_five = days_after_2005(df_inside_five, datetime.date(2005, 1, 1))

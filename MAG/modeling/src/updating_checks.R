@@ -26,9 +26,11 @@ inpath_prior <- paste0(inpath, "m_prior.rds")
 ## ----setup, include=FALSE-----------------------------------------------------
 
 # consider pacman
-install.packages("pacman", repos = "http://cran.r-project.org") 
-library(pacman)
+if (!require("pacman")){
+  install.packages("pacman") # repos = "http://cran.r-project.org"
+}
 
+library(pacman)
 p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr, latex2exp, ggpubr)
 
 # set up cmdstanr if it is not already present

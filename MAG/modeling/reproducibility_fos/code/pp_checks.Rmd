@@ -1,5 +1,0 @@
----
-title: "Posterior Predictive Checks"
-author: "Victor M. Poulsen" 
-output: html_document
----

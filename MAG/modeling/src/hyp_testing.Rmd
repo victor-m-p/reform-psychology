@@ -6,5 +6,344 @@ output: html_document
 
 ```{r setup, include=FALSE}
 
+outpath <- "/work/50114/MAG/fig/modeling/replication_fos/hyp_testing/"
+inpath_post <- "/work/50114/MAG/modeling/models/replication_fos/main_model/m_post.rds"
+
+```
+
+```{r}
+
+# consider pacman
+if (!require("pacman")){
+  install.packages("pacman") # repos = "http://cran.r-project.org"
+}
+
+library(pacman)
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr, latex2exp, ggpubr)
+
+# set up cmdstanr if it is not already present
+if (!require('cmdstanr')){
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+}
+
+```
+
+# Visual setup 
+
+```{r}
+
+color_scheme_set("orange")
+theme_set(theme_classic())
+
+theme_set(theme_classic())
+title = 18
+label = 14
+tick = 12 # same as legend
+
+```
+
+# Load model
+
+```{r}
+
+m_post <- readRDS(paste0(inpath_post))
+
+```
+
+# Hypothesis testing: model scales 
+
+```{r}
+
+# main effect
+h_intercept <- hypothesis(m_post, 
+                          "condition_fctexperiment < condition_fctcontrol",
+                          alpha = 0.05) 
+
+# log(teamsize) interaction
+h_teamsize <- hypothesis(m_post, 
+                         "condition_fctexperiment:log_teamsize < condition_fctcontrol:log_teamsize",
+                         alpha = 0.05)
+
+# year after 2005 interaction
+h_year <- hypothesis(m_post, 
+                     "condition_fctexperiment:year_after_2005 > condition_fctcontrol:year_after_2005",
+                     alpha = 0.05)
+
+```
+
+## plot hypothesis testing: 
+
+```{r}
+plot_hypothesis <- function(h, title, tick_size, label_size, xlab, annotate_size, x_lower, x_upper, legend_pos = "none"){
+  
+  # extract information
+  estimate <- h$hypothesis$Estimate
+  lower <- h$hypothesis$CI.Lower
+  upper <- h$hypothesis$CI.Upper
+  
+  # generate plot (list)
+  p_lst <- plot(h)
+  
+  # unlist
+  p <- p_lst[[1]]
+  
+  # ggplot
+  p <- p + 
+    theme(legend.position = legend_pos,
+          plot.title = element_text(hjust = 0.5, size = label),
+          legend.title = element_blank(),
+          axis.text = element_text(size = tick),
+          axis.title = element_text(size = label),
+          legend.text = element_text(size = tick),
+          strip.background = element_blank(),
+          strip.text = element_blank()) +
+    annotate("pointrange", x = estimate, y = 0, xmin = lower, xmax = upper, size = annotate_size) + 
+    labs(title = title, x = TeX(xlab)) +
+    xlim(x_lower, x_upper)
+  
+  return(p)
+}
+
+```
+
+### plot intercept 
+
+```{r}
+
+p_intercept <- plot_hypothesis(h = h_intercept,
+                               title = "Intercept (Year = 2005, Team Size = 1)",
+                               tick_size = tick,
+                               label_size = label,
+                               xlab = '',
+                               annotate_size = 1,
+                               x_lower = -2,
+                               x_upper = 2,
+                               legend_pos = "none")
+
+```
+
+### plot teamsize 
+
+```{r}
+
+p_teamsize <- plot_hypothesis(h = h_teamsize,
+                              title = "Team Size (log)",
+                              tick_size = tick,
+                              label_size = label,
+                              xlab = '',
+                              annotate_size = 1,
+                              x_lower = -2,
+                              x_upper = 2,
+                              legend_pos = "none")
+
+```
+
+### plot year
+
+```{r}
+
+p_year <- plot_hypothesis(h = h_year, 
+                          title = "Year after 2005",
+                          tick_size = tick,
+                          label_size = label,
+                          xlab = '$c_5$ difference',
+                          annotate_size = 1 - 0.2,
+                          x_lower = -2,
+                          x_upper = 2,
+                          legend_pos = "bottom")
+
+```
+
+### gather in grid 
+
+```{r}
+
+p_grid <- ggarrange(p_intercept, 
+                    p_teamsize, 
+                    p_year, 
+                    ncol = 1, 
+                    common.legend = TRUE, 
+                    legend = 'bottom')
+
+```
+
+```{r}
+p_grid
+```
+
+
+### save file 
+
+```{r}
+
+ggsave(filename = paste0(outpath, "hyp.pdf"),
+       plot = p_grid,
+       width = 8,
+       height = 11)
+
+```
+
+## effects saved as csv
+
+```{r}
+
+hypothesis2df <- function(h){
+  
+  d <- as.data.frame(h$hypothesis) %>% select(Hypothesis, 
+                                              Estimate, 
+                                              Est.Error,
+                                              CI.Lower, 
+                                              CI.Upper, 
+                                              Evid.Ratio,
+                                              Post.Prob,
+                                              Star)
+  
+  return(d)
+  
+}
+
+```
+
+## save csv
+
+```{r}
+
+d_intercept <- hypothesis2df(h_intercept)
+d_teamsize <- hypothesis2df(h_teamsize)
+d_year <- hypothesis2df(h_year)
+d_summary <- bind_rows(d_intercept, d_teamsize, d_year)
+write_csv(d_summary, paste0(outpath, "hyp.csv"))
+
+```
+
+
+
+# Hypothesis testing: outcome scale
+
+## run hypotheses
+
+```{r}
+
+# main effect
+h_intercept_outcome <- hypothesis(m_post, 
+                          "exp(condition_fctexperiment) < exp(condition_fctcontrol)",
+                          alpha = 0.05) 
+
+# log(teamsize) interaction
+h_teamsize_outcome <- hypothesis(m_post, 
+                         "exp(condition_fctexperiment:log_teamsize) < exp(condition_fctcontrol:log_teamsize)",
+                         alpha = 0.05)
+
+# year after 2005 interaction
+h_year_outcome <- hypothesis(m_post, 
+                     "exp(condition_fctexperiment:year_after_2005) > exp(condition_fctcontrol:year_after_2005)",
+                     alpha = 0.05)
+
+```
+
+### plot intercept
+
+```{r}
+
+p_intercept_outcome <- plot_hypothesis(h = h_intercept_outcome,
+                                       title = "Intercept (Year = 2005, Team Size = 1)",
+                                       tick_size = tick,
+                                       label_size = label,
+                                       xlab = '',
+                                       annotate_size = 0.8,
+                                       x_lower = -25,
+                                       x_upper = 25,
+                                       legend_pos = "none")
+
+```
+
+### plot team size 
+
+```{r}
+
+p_teamsize_outcome <- plot_hypothesis(h = h_teamsize_outcome,
+                                      title = "Team Size (log)",
+                                      tick_size = tick,
+                                      label_size = label,
+                                      xlab = '',
+                                      annotate_size = 0.8,
+                                      x_lower = -5,
+                                      x_upper = 5,
+                                      legend_pos = "none")
+
+```
+
+### plot year
+
+```{r}
+
+p_year_outcome <- plot_hypothesis(h = h_year_outcome, 
+                                  title = "Year after 2005",
+                                  tick_size = tick,
+                                  label_size = label,
+                                  xlab = '$c_5$ difference',
+                                  annotate_size = 0.8 - 0.2,
+                                  x_lower = -2.5,
+                                  x_upper = 2.5,
+                                  legend_pos = "bottom")
+
+```
+
+### arrange in grid
+
+```{r}
+
+p_grid_outcome <- ggarrange(p_intercept_outcome, 
+                            p_teamsize_outcome, 
+                            p_year_outcome, 
+                            ncol = 1, 
+                            common.legend = TRUE, 
+                            legend = 'bottom')
+
+```
+
+### save plot
+
+```{r}
+
+ggsave(filename = paste0(outpath, "hyp_outcome.pdf"),
+       plot = p_grid_outcome,
+       width = 8,
+       height = 11)
+
+```
+
+## gather csv
+
+```{r}
+
+d_intercept_outcome <- hypothesis2df(h_intercept_outcome)
+d_teamsize_outcome <- hypothesis2df(h_teamsize_outcome)
+d_year_outcome <- hypothesis2df(h_year_outcome)
+d_summary_outcome <- bind_rows(d_intercept_outcome, d_teamsize_outcome, d_year_outcome)
+write_csv(d_summary_outcome, paste0(outpath, "hyp_outcome.csv"))
+
+```
+
+
+# --- specific hypotheses ---
+
+```{r}
+
+#scaling = log(2) - log(1)
+#scaling
+
+```
+
+```{r}
+
+#h_teamsize_outcome <- hypothesis(
+#  m_post, 
+#  "exp(condition_fctexperiment:log_teamsize * 0.693) < exp(condition_fctcontrol:log_teamsize * 0.693)",
+#  alpha = 0.5)
+#plot(h_teamsize_outcome)
+
 ```
 

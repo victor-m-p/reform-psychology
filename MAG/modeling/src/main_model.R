@@ -13,8 +13,6 @@ args = commandArgs(trailingOnly=TRUE)
 
 wd_code <- "/work/50114/MAG/modeling/src"
 inpath <- "/work/50114/MAG/data/modeling/"
-## infile <- "psychology_replication_matched.csv"
-## outpath_models <- "/work/50114/MAG/modeling/replication_fos/models/main_model/"
 infile <- args[1]
 outpath_models <- args[2]
 
@@ -25,9 +23,11 @@ outpath_models <- args[2]
 ## ----setup, include=FALSE-----------------------------------------------------
 
 # consider pacman
-install.packages("pacman", repos = "http://cran.r-project.org") 
-library(pacman)
+if (!require("pacman")){
+  install.packages("pacman") # repos = "http://cran.r-project.org"
+}
 
+library(pacman)
 p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
 
 # set up cmdstanr if it is not already present
@@ -53,6 +53,7 @@ csv_path <- paste0(inpath, infile)
 d <- read_csv(csv_path) %>%
   mutate(log_teamsize = log(n_authors), 
          condition_fct = as_factor(condition), 
+         condition_fct = fct_relevel(condition_fct, c("experiment", "control")),
          id_match = as_factor(match_group),
          id_dct = as_factor(PaperId),
          year_after_2005 = Year - 2005) 

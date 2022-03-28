@@ -1,0 +1,4 @@
+Hypothesis,Estimate,Est.Error,CI.Lower,CI.Upper,Evid.Ratio,Post.Prob,Star
+(condition_fctexperiment)-(condition_fctcontrol) < 0,0.448928285,0.17589919508945187,0.16425850000000008,0.7422659999999996,0.007302946361118106,0.00725,
+(condition_fctexperiment:log_teamsize)-(condition_fctcontrol:log_teamsize) < 0,-0.11698043275,0.0954231739194662,-0.27229194999999995,0.03798695,8.195402298850574,0.89125,
+(condition_fctexperiment:year_after_2005)-(condition_fctcontrol:year_after_2005) > 0,0.012417558149175,0.01971040179830239,-0.020088325,0.044486261499999985,2.7735849056603774,0.735,

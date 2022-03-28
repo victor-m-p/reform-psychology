@@ -338,8 +338,8 @@ summary_diagnostics <- function(m){ # m = model
   # summarize 
   d_summary <- bind_rows(d_fixed, d_family, d_group) %>%
     summarize(max_rhat = max(Rhat),
-            min_tail = min(Tail_ESS),
-            min_bulk = min(Bulk_ESS))
+              min_tail = min(Tail_ESS),
+              min_bulk = min(Bulk_ESS))
   
   # return
   return(d_summary)

@@ -1,5 +1,0 @@
----
-title: "Updating Checks"
-author: "Victor M. Poulsen" 
-output: html_document
----

@@ -8,18 +8,17 @@ output: html_document
 
 ```{r setup, include=FALSE}
 
-wd_code = "/work/50114/MAG/modeling/replication_fos/code"
-inpath <- "/work/50114/MAG/modeling/replication_fos/models/main_model/"
-outpath <- "/work/50114/MAG/fig/modeling/replication_fos/pp_checks/"
-inpath_post <- paste0(inpath, "m_post.rds")
-inpath_prior <- paste0(inpath, "m_prior.rds")
+outpath <- "/work/50114/MAG/fig/modeling/replication_fos/explore_priors/"
 
 ```
 
 ```{r, include=FALSE}
 
 # consider pacman
-install.packages("pacman") 
+if (!require("pacman")){
+  install.packages("pacman") # repos = "http://cran.r-project.org"
+}
+
 library(pacman)
 p_load(tidyverse, 
        brms, 
@@ -41,6 +40,7 @@ install_cmdstan(cores = 2, overwrite = TRUE)
 install.packages(c("coda","mvtnorm","devtools","loo"))
 library(devtools)
 devtools::install_github("rmcelreath/rethinking")
+
 ```
 
 # Visual setup
@@ -60,72 +60,34 @@ tick = 12 # same as legend
 
 ```
 
-```{r}
-color_map
-```
+# Shape/Phi parameter
 
-
-# shape (phi) parameter 
-
-```{r}
-rnorm(1000, mean = 5)
-```
-
-```{r}
-
-# n = 10000
-d <- tibble(x = rexp(10000, rate = 1)) %>%
-  ggplot(aes(x = x)) +
-  #geom_histogram(binwidth = .1, fill = "grey60") +
-  geom_ribbon(aes(ymin = 0,
-                  ymax = dexp(x, rate = 1)),
-            fill = color_lst[2],
-            alpha = 1) +
-  stat_pointinterval(aes(y = 0), .width = c(.5, .95)) +
-  #scale_y_continuous(NULL, breaks = NULL) +
-  ggtitle("Prior predictive distribution for exp(1)") +
-  coord_cartesian(xlim = c(0, 5), ylim = (c(0, 1)))
-d
-
-```
-
-```{r}
-
-```
-
-
-```{r}
-d %>% ggplot()
-```
-
-
-## functions for plotting ONLY priors
-NB: only want y-lab for one of them. 
-think about combining & saving. 
+## plot gamma 
 
 ```{r}
 
 plot_gamma <- function(title, 
-                     title_size, 
-                     tick_size, 
-                     label_size, 
-                     mu = .01,
-                     gamma = .01,
-                     n = 10000, 
-                     from = 0, 
-                     to = 10, 
-                     by = .01){
+                       title_size, 
+                       tick_size, 
+                       label_size, 
+                       shape = .01,
+                       scale = .01,
+                       #theta = 0.01,
+                       n = 10000, 
+                       from = 0, 
+                       to = 10, 
+                       by = .01){
   
-  d <- tibble(x = rethinking::rgamma2(n, mu, theta)) %>%
+  d <- tibble(x = rgamma(n, shape, scale)) %>% # rethinking::rgamma2(n, shape, scale)
     ggplot(aes(x = x)) +
     geom_ribbon(aes(ymin = 0,
-                    ymax = rethinking::dgamma2(x, mu, theta)),
+                    ymax = dgamma(x, shape, scale)),
               fill = color_lst[2],
               alpha = 1) +
     stat_pointinterval(aes(y = 0), .width = c(.5, .95)) +
-    labs(title = TeX("Prior predictive distribution $\\gamma(.01, .01)$"), # should be flex
+    labs(title = TeX("$\\gamma(.01, .01)$"), # Prior predictive distribution 
          x = TeX("$\\mu$"),
-         y = "Density") + 
+         y = "") + 
     coord_cartesian(xlim = c(0, 10), ylim = (c(0, 1))) +
     theme(plot.title = element_text(size = title_size, hjust = 0.5),
           legend.title = element_blank(),
@@ -135,6 +97,23 @@ plot_gamma <- function(title,
   
   return(d)
 }
+
+
+```
+
+
+```{r}
+
+p_gamma <- plot_gamma(title = "test",
+                      title_size = title,
+                      tick_size = tick,
+                      label_size = label)
+
+```
+
+## plot exp
+
+```{r}
 
 plot_exp <- function(rate, 
                      title, 
@@ -149,11 +128,11 @@ plot_exp <- function(rate,
   d <- tibble(x = rexp(n, rate)) %>%
     ggplot(aes(x = x)) +
     geom_ribbon(aes(ymin = 0,
-                    ymax = dexp(x, rate = 1)),
+                    ymax = dexp(x, rate = rate)),
               fill = color_lst[2],
               alpha = 1) +
     stat_pointinterval(aes(y = 0), .width = c(.5, .95)) +
-    labs(title = TeX("Prior predictive distribution $\\exp(1)$"), # should be flex
+    labs(title = TeX("$\\exp(0.5)$"), # Prior predictive distribution
          x = TeX("$\\mu$"),
          y = "Density") + 
     coord_cartesian(xlim = c(0, 10), ylim = (c(0, 1))) +
@@ -168,21 +147,25 @@ plot_exp <- function(rate,
 
 ```
 
-check plots
-
 ```{r}
-p_exp <- plot_exp(rate = 1, 
+
+p_exp <- plot_exp(rate = 0.5, 
                   title = "test",
                   title_size = title, 
                   tick_size = tick,
                   label_size = label)
 
-p_gamma <- plot_gamma(title = "test",
-                      title_size = title,
-                      tick_size = tick,
-                      label_size = label)
+```
 
-plot_grid(p_exp, p_gamma)
+## gather plots and save 
+
+```{r}
+
+p_grid <- plot_grid(p_exp, p_gamma)
+ggsave(filename = paste0(outpath, "phi.pdf"),
+       plot = p_grid,
+       width = 8,
+       height = 5.5) # half page 
 
 ```
 

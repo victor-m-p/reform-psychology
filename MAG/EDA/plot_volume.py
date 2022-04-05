@@ -1,6 +1,16 @@
 '''
-VMP 2022-03-11 (used in final report): --> run on 2022-03-11
-growth of subfields over time.
+VMP 2022-04-02: 
+Representation in different groups over time: 
+* Replication (FoS)
+* Reproducibility (FoS)
+* Open Science (FoS)
+* Replication (Title)
+
+Returns: 
+* Plot of data (2005-2015, 2016-2020)
+* Plot of fraction (2005-2020)
+* Plot of % increase (2005-2020)
+* .csv with key data to report 
 '''
 
 # imports 
@@ -11,24 +21,27 @@ import datetime, time
 import numpy as np
 from matplotlib.lines import Line2D
 
+# vars 
+field = 'psychology'
+keyword = 'replicat'
+outpath = '/work/50114/MAG/fig/EDA'
+
 ## plot setup: https://colorbrewer2.org/#type=sequential&scheme=YlOrRd&n=3
 col_openscience = {'dark': "#3182bd", 'light': "#9ecae1"}
 col_replication = {'dark': '#e6550d', 'light': '#fdae6b'}
 col_reproducibility = {'dark': '#31a354', 'light': '#a1d99b'}
-col_dct = {'openscience': "#3182bd", 'replication': '#e6550d', 'reproducibility': '#31a354'}
+col_keyword = {'dark': '#756bb1', 'light': '#bcbddc'}
+col_dct = {'openscience': "#3182bd", 'replication': '#e6550d', 'reproducibility': '#31a354', 'keyword': '#756bb1'}
 text_dct = {'title': 18, 'label': 14, 'major_tick': 12, 'minor_tick': 10}
 
-# vars 
-field = 'psychology'
-outpath = '/work/50114/MAG/fig/EDA'
-
-# load stuff 
+# read data
 df_meta = pd.read_csv(f"/work/50114/MAG/data/raw/{field}_paper_meta_clean.csv")
 df_openscience = pd.read_csv(f"/work/50114/MAG/data/raw/{field}_openscience.csv")
 df_replication = pd.read_csv(f"/work/50114/MAG/data/raw/{field}_replication.csv")
 df_reproducibility = pd.read_csv(f"/work/50114/MAG/data/raw/{field}_reproducibility.csv")
 
-# only journal/conference & [2005, 2021]
+# preprocessing: 
+## get candidate papers 
 def clean_meta(df_meta, fos): 
     '''
     df_meta: <pd.dataframe> dataframe (meta) to be cleaned
@@ -53,9 +66,10 @@ def clean_meta(df_meta, fos):
 
     return df_clean
 
-# get data out 
+## run function 
 df_meta_clean = clean_meta(df_meta, 'psychology')
 
+## get the subset for fos (inner join)
 def get_subfield(df_meta_clean, df_subfield):
     '''
     df_meta_clean: <pd.dataframe> cleaned with 'clean_meta' function
@@ -69,11 +83,43 @@ def get_subfield(df_meta_clean, df_subfield):
 
     return df_gathered
 
+## get values out
+### check that the number is right in (2005, 2015)
 df_openscience_meta = get_subfield(df_meta_clean, df_openscience)
 df_replication_meta = get_subfield(df_meta_clean, df_replication)
 df_reproducibility_meta = get_subfield(df_meta_clean, df_reproducibility)
 
-# group by year and get count
+## get query subset 
+df_keyword_meta = df_meta_clean.loc[df_meta_clean['PaperTitle'].str.contains(keyword, case=False)]
+
+# check data
+## length of original 
+len(df_meta) # 6.770.202
+len(df_openscience_meta) # 229
+len(df_replication_meta) # 1434
+len(df_reproducibility_meta) # 383
+len(df_keyword_meta) # 2442
+
+## check length in (2005, 2015) -- sanity check
+def check_sublength(d):
+    '''
+    d: <pd.dataframe> 
+    '''
+    # records in (2005, 2015)
+    d = d[
+        (d["Date"] >= datetime.date(2005, 1, 1)) & 
+        (d["Date"] < datetime.date(2016, 1, 1))]
+
+    # print information
+    print(f"{len(d)}")
+
+check_sublength(df_openscience_meta) # 27 (correct)
+check_sublength(df_replication_meta) # 620 (correct)
+check_sublength(df_reproducibility_meta) # 228 (correct)
+check_sublength(df_keyword_meta) # 1196 (correct)
+
+# prepare plot 
+## group years 
 def group_time(df):
     '''
     df: <pd.dataframe> 
@@ -100,9 +146,9 @@ def group_time(df):
 df_openscience_year = group_time(df_openscience_meta)
 df_replication_year = group_time(df_replication_meta)
 df_reproducibility_year = group_time(df_reproducibility_meta)
+df_keyword_year = group_time(df_keyword_meta)
 
 ''' 1. subfield count '''
-
 def plot_before_after_subplts(
     dfs, 
     x, 
@@ -131,8 +177,8 @@ def plot_before_after_subplts(
     ''' 
 
     fig, ax = plt.subplots(
-        1, 
-        3, 
+        1,
+        4, 
         dpi = 300, 
         figsize = figsize, 
         sharex = True, 
@@ -143,8 +189,8 @@ def plot_before_after_subplts(
         clr = var[1]
         sub = var[2]
 
-        df_before = df[df[x] < 2016]
-        df_after = df[df[x] >= 2016]
+        df_before = df[df[x] < year]
+        df_after = df[df[x] >= year]
 
         x_before = list(df_before[x].values)
         y_before = list(df_before[y].values)
@@ -167,13 +213,13 @@ def plot_before_after_subplts(
     fig.tight_layout()
     plt.savefig(f"{outpath}/{filename}.pdf")
 
-# prepare the plot 
-df_lst = [df_openscience_year, df_replication_year, df_reproducibility_year]
-clrs_lst = [col_openscience, col_replication, col_reproducibility]
-subfields_lst = ["Open Science", "Replication", "Reproduciblity"]
+## plot set-up
+df_lst = [df_replication_year, df_keyword_year, df_openscience_year, df_reproducibility_year]
+clrs_lst = [col_replication, col_keyword, col_openscience, col_reproducibility]
+subfields_lst = ["$R_{FOS}$", "$R_{QUERY}$", "$OS_{FOS}$", "$R*_{FOS}$"]  
 plot_name = 'subfield_count'
 
-# actually make the plot 
+## plot it 
 plot_before_after_subplts(
     dfs = df_lst, 
     x = 'Year',
@@ -181,14 +227,12 @@ plot_before_after_subplts(
     year = 2016,
     clrs = clrs_lst,
     subfields = subfields_lst,
-    figsize = (11, 3.5),
+    figsize = (8, 2.5),
     text_dct = text_dct,
     outpath = outpath,
     filename = plot_name)
 
-
 ''' 2. percent growth since 2005 '''
-
 def plot_growth_after_year(
     dfs, 
     x, 
@@ -248,7 +292,8 @@ def plot_growth_after_year(
     lines = [
         Line2D([0], [0], color = clrs.get(sub_keys[0])),
         Line2D([0], [0], color = clrs.get(sub_keys[1])),
-        Line2D([0], [0], color = clrs.get(sub_keys[2]))]
+        Line2D([0], [0], color = clrs.get(sub_keys[2])),
+        Line2D([0], [0], color = clrs.get(sub_keys[3]))]
 
     labels = subfields
     ax.legend(lines, labels, prop = {'size': text_dct.get('major_tick')}, frameon=False)
@@ -256,16 +301,16 @@ def plot_growth_after_year(
     fig.tight_layout()
     plt.savefig(f"{outpath}/{filename}.pdf")
 
-
 # plot 
+color_keys = ['replication', 'keyword', 'openscience', 'reproducibility']
 plot_growth_after_year(
     dfs = df_lst, 
     x = 'Year', 
     y = 'count', 
     clrs = col_dct, 
-    sub_keys = ['openscience', 'replication', 'reproducibility'], 
+    sub_keys = color_keys, 
     subfields = subfields_lst,
-    figsize = (11/2, 3.5), # half width
+    figsize = (8/2, 2.5), # half width
     text_dct = text_dct,
     outpath = outpath, 
     filename = 'subfield_percentage_change',
@@ -273,7 +318,6 @@ plot_growth_after_year(
 
 
 ''' 3. relative size within psychology '''
-
 # function
 def plot_relative_size(
     df_meta,
@@ -331,20 +375,20 @@ def plot_relative_size(
         
     ax.xaxis.set_ticks(np.arange(2005, 2021, 5)) 
 
-    lines = [
-        Line2D([0], [0], color = clrs.get(sub_keys[0])),
-        Line2D([0], [0], color = clrs.get(sub_keys[1])),
-        Line2D([0], [0], color = clrs.get(sub_keys[2]))]
+    #lines = [
+    #    Line2D([0], [0], color = clrs.get(sub_keys[0])),
+    #    Line2D([0], [0], color = clrs.get(sub_keys[1])),
+    #    Line2D([0], [0], color = clrs.get(sub_keys[2])),
+    #    Line2D([0], [0], color = clrs.get(sub_keys[3]))]
 
-    labels = subfields
-    ax.legend(lines, labels, prop = {'size': text_dct.get('major_tick')}, frameon=False)
+    #labels = subfields
+    #ax.legend(lines, labels, prop = {'size': text_dct.get('major_tick')}, frameon=False)
+    #ax.get_legend().remove()
 
     fig.tight_layout()
     plt.savefig(f"{outpath}/{filename}.pdf")
 
-
 # prepare plot 
-
 ## aggregate year 
 df_meta_year = group_time(df_meta_clean)
 '''
@@ -367,9 +411,10 @@ plot_relative_size(
     x = 'Year', 
     y = 'count', 
     clrs = col_dct, 
-    sub_keys = ['openscience', 'replication', 'reproducibility'], 
+    sub_keys = color_keys, 
     subfields = subfields_lst,
-    figsize = (11/2, 3.5), # half width
+    figsize = (8/2, 2.5), # half width
     text_dct = text_dct,
     outpath = outpath, 
     filename = 'subfield_percentage_overall')
+

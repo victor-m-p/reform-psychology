@@ -1,15 +1,8 @@
 '''
-VMP 2022-03-10 (main file): 
-Main document for matching & calculating c_5 and date-delay. 
-Tricky things about matching: 
-1) loop strategy does not ensure best match
-2) would be good to match approximately on two columns rather than only on one (makes it hard to match those with high n. authors)
+VMP 2022-04-02: 
+Preprocessing of studies that match 'replicat' (or other queries).
 
-or through run_query.sh:
-bash run_query.sh psychology replicat
-
-changelog: 
-* ran "replicat" again (not yet). 
+Run through main.sh
 
 '''
 
@@ -78,7 +71,7 @@ def get_subset(df, fos):
 
     return filtered_df
 
-# get our subset (psychology, Journal and between 2010-2021)
+# get our subset (psychology, Journal and in (2005-2020)
 def get_keyword_subset(df_meta, df_paa, fos, keyword): 
     '''
     df_meta: <pd.dataframe> dataframe with meta-data (meta-data)

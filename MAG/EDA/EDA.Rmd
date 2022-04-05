@@ -1,0 +1,387 @@
+---
+title: "EDA"
+author: "Victor M. Poulsen" 
+output: html_document
+---
+
+# Set-up
+
+```{r setup, include=FALSE}
+
+# consider pacman
+if (!require("pacman")){
+  install.packages("pacman") # repos = "http://cran.r-project.org"
+}
+
+library(pacman)
+p_load(tidyverse, 
+       cowplot,
+       latex2exp,
+       ggdist,
+       ggpubr,
+       gridExtra)
+
+```
+
+
+# Aesthetic set-up
+
+```{r}
+
+color_map <- c("experiment" = '#e6550d',
+               "control" = '#fdae6b')
+
+color_lst <- c('#e6550d', '#fdae6b')
+
+theme_set(theme_classic())
+title = 18
+label = 14
+tick = 12 # same as legend
+
+```
+
+# PATHS
+
+```{r}
+
+inpath <- "/work/50114/MAG/data/modeling/"
+infile <- "psychology_replicat_matched.csv" # "psychology_replication_matched.csv"
+filename <- "replication_query" #"replication_fos"
+outpath_csv <- "/work/50114/MAG/data/EDA/"
+outpath_fig <- "/work/50114/MAG/fig/EDA/"
+
+```
+
+
+# Read data
+
+```{r}
+
+d <- read_csv(paste0(inpath, infile)) %>% 
+  mutate(log_teamsize = log(n_authors), 
+         condition_fct = as_factor(condition), 
+         condition_fct = fct_relevel(condition_fct, c("experiment", "control")),
+         id_match = as_factor(match_group),
+         id_dct = as_factor(PaperId),
+         year_after_2005 = Year - 2005) %>%
+  select(condition_fct, condition, n_authors, log_teamsize, Year, year_after_2005, c_5)
+
+```
+
+# c5
+
+## prep 
+
+```{r}
+
+max_count <- d %>% group_by(condition_fct, c_5) %>%
+  summarize(count = n()) %>% 
+  ungroup() %>%
+  summarize(max = max(count))
+
+```
+
+```{r}
+
+x_max <- ceiling(max(max_count[[1]])/10)*10
+
+```
+
+
+## histogram 
+
+```{r}
+
+p_c5_hist <- d %>% ggplot(aes(x = c_5, fill = condition_fct)) + 
+    geom_bar(stat = "count", width = 0.8) + 
+    facet_wrap(~condition_fct) +
+    lims(x = c(-0.5, 50), y = c(0, x_max)) +
+  theme(axis.text = element_text(size = tick), #element_blank(), # element_text(size = tick),
+        axis.title = element_text(size = label),
+        legend.text = element_text(size = tick),
+        legend.position = "bottom",
+        strip.background = element_blank(),
+        strip.text = element_blank()) + # element_text(size = label)) +
+  scale_fill_manual(values = color_map,
+                    guide = guide_legend(title = NULL)) + 
+  labs(x = TeX("$c_5$"),
+       y = "count")
+```
+
+```{r}
+p_c5_hist
+```
+
+
+## halfeye + box
+
+```{r}
+
+p_c5_halfeye <- d %>% ggplot(aes(c_5, condition_fct, fill = condition_fct)) + 
+  ggdist::stat_halfeye(point_color = NA, .width = 0, height = 1) +  
+  geom_boxplot(width = .1, outlier.shape = NA, position = position_nudge(y = -0.1), show.legend=FALSE) + 
+  scale_fill_manual(values = color_map,
+                    guide = guide_legend(title = NULL)) + 
+  scale_color_manual(values = color_map,
+                     guide = guide_legend(title = NULL)) + 
+  #xlim(0, 300) +
+  scale_y_discrete(expand = c(0.12, 0.12)) +
+  scale_x_continuous(limits = c(0, 300), expand = c(0.02, 0.02)) + 
+  labs(#title = TeX("Outcome Distribution ($c_5$)"),
+       y = "condition", 
+       x = TeX("$c_5$")) + 
+  theme(#plot.title = element_text(hjust = 0.5, size = title),
+        axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        legend.text = element_text(size = tick),
+        legend.position = "none",
+        #axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+```
+
+## gather 
+
+```{r}
+
+p_grid <- ggarrange(p_c5_halfeye, p_c5_hist, ncol = 1,
+          labels = c("A", "B")) 
+
+```
+
+## annotate
+
+```{r}
+
+#p_annotate <- annotate_figure(p_grid, top = text_grob(TeX("Outcome Distribution ($c_5$)"), size #= title))
+
+```
+
+## save 
+
+```{r}
+
+ggsave(filename = paste0(outpath_fig, filename, "_c5_distribution.pdf"), 
+       plot = p_grid,
+       width = 8,
+       height = 6)
+
+```
+
+# teamsize 
+## NB: we put less weight on the really far end of the tail (e.g. those with more than 100 citations) & 
+## more emphasize the difference between small and medium sized studies. 
+## this is with 95% confidence interval around the mean linear trend. 
+## setting ylim(0, 300) which excludes one highly cited study for the benefit of actually being able to see anything... 
+
+## annotated plot 
+
+```{r}
+
+x_low = 1
+x_mid = 2
+x_high = 4
+x_top = 8
+x_space = 0.05
+y_main = 280
+y_space = 3
+size = 0.2
+
+p_teamsize_log <- d %>% ggplot(aes(x = log_teamsize, y = c_5, color = condition_fct)) + 
+  geom_jitter(height = 0, size = 1.5, alpha = 0.8) + 
+  geom_smooth(method = "lm", aes(fill = condition_fct)) + 
+  ylim(0, 300) + 
+  scale_colour_manual(values = color_map,
+                      guide = guide_legend(title = NULL)) +
+  scale_fill_manual(values = color_map,
+                    guide = guide_legend(title = NULL)) + 
+  geom_segment(aes(x = log(x_low), # low horizontal
+                   y = y_main, 
+                   xend = log(x_mid - x_space), 
+                   yend = y_main), 
+               color = 'black', size = size) +
+  geom_segment(aes(x = log(x_high + x_space), # high horizontal
+                   y = y_main, 
+                   xend = log(x_top), 
+                   yend = y_main), 
+               color = 'black', size = size) + 
+  geom_segment(aes(x = log(x_low), # low vertical (left)
+                   y = y_main - y_space, 
+                   xend = log(x_low), 
+                   yend = y_main + y_space), 
+               color = 'black', size = size) +
+  geom_segment(aes(x = log(x_mid - x_space), # low vertical (right)
+                   y = y_main - y_space, 
+                   xend = log(x_mid - x_space), 
+                   yend = y_main + y_space), 
+               color = 'black', size = size) + 
+  geom_segment(aes(x = log(x_high + x_space), # high vertical (left)
+                   y = y_main - y_space, 
+                   xend = log(x_high + x_space), 
+                   yend = y_main + y_space), 
+               color = 'black', size = size) +
+  geom_segment(aes(x = log(x_top),
+                   y = y_main - y_space,
+                   xend = log(x_top),
+                   yend = y_main + y_space),
+               color = 'black', size = size) +
+  annotate("text", x = log(1.4), y = y_main + 20, label = TeX("$TEAMSIZE \\in (1, 2)$"), size = 4) + 
+  annotate("text", x = log(5.9), y = y_main + 20, label = TeX("$TEAMSIZE \\in (4, 8)$"), size = 4) + 
+  labs(title = "",
+       x = "log(TEAMSIZE)",
+       y = TeX("$c_5$")) +
+  theme(axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        legend.text = element_text(size = tick),
+        legend.position = "bottom") 
+
+p_teamsize_log
+
+```
+
+## base plot
+
+```{r}
+
+p_teamsize_raw <- d %>% ggplot(aes(x = n_authors, y = c_5, color = condition_fct)) + 
+  geom_jitter(height = 0, size = 1.5, alpha = 0.8) + 
+  geom_smooth(method = "lm", 
+              aes(fill = condition_fct)) + 
+  ylim(0, 300) + 
+  scale_colour_manual(values = color_map,
+                      guide = guide_legend(title = NULL)) +
+  scale_fill_manual(values = color_map,
+                    guide = guide_legend(title = NULL)) + 
+  labs(title = "",
+       x = "TEAMSIZE",
+       y = TeX("$c_5$")) + 
+  theme(axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        #legend.text = element_text(size = tick),
+        legend.position = "none")
+
+```
+
+
+# year 
+## again excludes this one study to be able to actually see what is going on. 
+
+```{r}
+
+p_year <- d %>% ggplot(aes(x = Year, y = c_5, color = condition_fct)) + 
+  geom_jitter(height = 0, width = 0.2, size = 1.5, alpha = 0.8) + 
+  geom_smooth(method = "lm",
+              aes(fill = condition_fct)) + 
+  ylim(0, 300) + 
+  scale_colour_manual(values = color_map,
+                      guide = guide_legend(title = NULL)) +
+  scale_fill_manual(values = color_map,
+                    guide = guide_legend(title = NULL)) + 
+  labs(title = "",
+       x = "YEAR",
+       y = TeX("$c_5$")) + 
+  theme(axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        #legend.text = element_text(size = tick),
+        legend.position = "none")
+
+```
+
+## gather in grid 
+
+```{r}
+
+gt <- arrangeGrob(p_teamsize_log, 
+                  p_year,
+                  p_teamsize_raw, 
+                  ncol = 2, 
+                  nrow = 2, 
+                  layout_matrix = rbind(c(2,3), c(1,1),
+                                        heights=c(4,1)))
+
+# Add labels to the arranged plots
+p_grid <- as_ggplot(gt) +                                # transform to a ggplot
+  draw_plot_label(label = c("A", "B", "C"), size = 15,
+                  x = c(0, 0.5, 0), y = c(1, 1, 0.65)) # Add labels
+
+
+```
+
+## annotate
+
+```{r}
+
+#p_annotate <- annotate_figure(p_grid, top = text_grob(TeX("Predictors (EDA)"), size = title))
+
+```
+
+## ggsave
+
+```{r}
+
+ggsave(filename = paste0(outpath_fig, filename, "_c5_predictors.pdf"), 
+       plot = p_grid,
+       width = 8,
+       height = 6)
+
+```
+
+
+## Summary statistics
+
+## NOTE on LOG
+
+```{r}
+
+# same distance
+log(2) - log(1) # 0.693
+log(4) - log(2) # 0.693
+log(8) - log(4) # 0.693
+log(32) - log(16) # 0.693
+log(128) - log(64) # 0.693
+
+```
+
+## Mean, Median, Max, standard deviation (sd), Number of Zero's
+
+```{r}
+
+# divisor 
+n_each_category = nrow(d)/2
+
+# summary statistics
+d_stats <- d %>% group_by(condition_fct) %>% 
+  summarize(c5_mean = mean(c_5), # much greater mean
+            c5_median = median(c_5),
+            c5_max = max(c_5),
+            c5_sd = sd(c_5)) # also much greater sd 
+  
+# number of zero's
+d_zero <- d %>% filter(c_5 == 0) %>% 
+  group_by(condition_fct) %>% 
+  summarize(c5_zero = n()) %>% 
+  mutate(c5_zero_fraction = c5_zero / n_each_category)
+
+# join it together 
+d_summary <- merge(d_stats, d_zero, by = "condition_fct")
+
+# write file 
+write_csv(d_summary, paste0(outpath, filename, "d_summary.csv"))
+
+```
+
+#### test it out for QUERY ####
+
+```{r}
+
+d_zero
+
+```
+
+```{r}
+d_stats
+```
+
+
+

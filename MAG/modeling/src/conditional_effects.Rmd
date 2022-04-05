@@ -4,16 +4,9 @@ author: "Victor M. Poulsen"
 output: html_document
 ---
 
----
-title: "Simulate and Predict"
-author: "Victor M. Poulsen" 
-output: html_document
----
-
-
 ```{r setup, include=FALSE}
 
-inpath_csv <- "/work/50114/MAG/data/modeling/"
+inpath <- "/work/50114/MAG/data/modeling/"
 infile <- "psychology_replication_matched.csv"
 outpath <- "/work/50114/MAG/fig/modeling/replication_fos/simulate_predict/"
 inpath_post <- "/work/50114/MAG/modeling/models/replication_fos/main_model/m_post.rds"

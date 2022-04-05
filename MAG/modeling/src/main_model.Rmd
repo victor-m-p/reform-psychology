@@ -18,7 +18,7 @@ outpath_models <- "/work/50114/MAG/modeling/replication_fos/models/main_model/"
 
 # VMP 2022-03-11
 
-```{r setup, include=FALSE}
+```{r, include=FALSE}
 
 # consider pacman
 install.packages("pacman") 
@@ -78,6 +78,12 @@ get_prior(
   data = d, 
   family = negbinomial())
 
+```
+
+## temporary 
+
+```{r}
+m_post <- readRDS("/work/50114/MAG/modeling/models/replication_fos/main_model/m_post.rds")
 ```
 
 

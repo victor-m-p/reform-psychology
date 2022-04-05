@@ -169,11 +169,6 @@ p_grid <- ggarrange(p_intercept,
 
 ```
 
-```{r}
-p_grid
-```
-
-
 ### save file 
 
 ```{r}

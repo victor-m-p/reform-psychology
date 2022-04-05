@@ -1,15 +1,11 @@
 '''
-VMP 2022-03-11: 
-Actual analysis pipeline for sub-studies 
+VMP 2022-04-02: 
+Preprocessing of sub-fields (fos). All psychology, and: 
+* replication
+* reproducibility
+* openscience
 
-usage e.g.: 
-bash run_subfields.sh psychology openscience
-
-changelog: 
-2022-03-12: small change + addition: 
-* ran "replication" again (2022-03-26)
-* ran "reproducibility" again (2022-03-26)
-* ran "openscience" again (2022-03-26)
+Run through main.sh
 '''
 
 # packages

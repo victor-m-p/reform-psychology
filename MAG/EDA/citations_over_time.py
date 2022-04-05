@@ -100,12 +100,16 @@ def plot_grouped_condition(d):
         d1 = d[d["PaperId"] == idx]
         x1 = list(d1["year_diff"].values)
         y1 = list(d1["count"].values)
+        #y1 = [int(x) for x in y1]
         condition = list(d1["condition"].values)[0]
         plt.plot(x1, y1, color = col_tmp.get(condition), alpha = 0.1)
     plt.show();
 
-# works fine 
-plot_grouped_condition(d_cleaned)
+
+
+
+##### other stuff #####
+
 
 ### cumulative ### 
 # looks to linear? 

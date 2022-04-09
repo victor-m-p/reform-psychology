@@ -17,33 +17,33 @@ outpath = args[1]
 #' 
 ## ---- include=FALSE-----------------------------------------------------------
 
+r = getOption("repos")
+r["CRAN"] = "http://cran.r-project.org"
+options(repos = r)
+
 # consider pacman
 if (!require("pacman")){
+  print("-- installing pacman --")
   install.packages("pacman") # repos = "http://cran.r-project.org"
 }
 
-library(pacman)
-p_load(tidyverse, 
-       brms, 
-       ggthemes, 
-       bayesplot, 
-       cowplot, 
-       tidybayes, 
-       modelr, 
-       latex2exp, 
-       ggpubr)
+pacman::p_load(tidyverse, 
+               brms, 
+               ggthemes, 
+               bayesplot, 
+               cowplot, 
+               tidybayes, 
+               modelr, 
+               latex2exp, 
+               ggpubr)
 
 # set up cmdstanr if it is not already present
 if (!require('cmdstanr')){
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-library(cmdstanr)
-install_cmdstan(cores = 2, overwrite = TRUE)
+  print("-- installing cmdstanr --")
+  install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+  library(cmdstanr)
+  install_cmdstan(cores = 2, overwrite = TRUE)
 }
-
-#install.packages(c("coda","mvtnorm","devtools","loo"))
-#library(devtools)
-#devtools::install_github("rmcelreath/rethinking")
-
 
 #' 
 #' # Visual setup

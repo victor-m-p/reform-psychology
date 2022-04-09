@@ -19,8 +19,10 @@ inpath_csv <- "/work/50114/MAG/data/modeling/"
 infile <- args[1]
 outpath <- args[2]
 inpath_rds <- args[3]
+tag <- args[4]
 inpath_post <- paste0(inpath_rds, "m_post.rds")
 inpath_prior <- paste0(inpath_rds, "m_prior.rds")
+
 
 #' 
 #' # Packages
@@ -32,14 +34,21 @@ if (!require("pacman")){
   install.packages("pacman") # repos = "http://cran.r-project.org"
 }
 
-library(pacman)
-p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr, latex2exp, ggpubr)
+pacman::p_load(tidyverse, 
+               brms, 
+               ggthemes, 
+               bayesplot, 
+               cowplot, 
+               tidybayes, 
+               modelr, 
+               latex2exp, 
+               ggpubr)
 
 # set up cmdstanr if it is not already present
 if (!require('cmdstanr')){
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-library(cmdstanr)
-install_cmdstan(cores = 2, overwrite = TRUE)
+  install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+  library(cmdstanr)
+  install_cmdstan(cores = 2, overwrite = TRUE)
 }
 
 #setwd(wd_code)
@@ -71,6 +80,7 @@ csv_path <- paste0(inpath_csv, infile)
 d <- read_csv(csv_path) %>%
   mutate(log_teamsize = log(n_authors), 
          condition_fct = as_factor(condition), 
+         condition_fct = fct_relevel(condition_fct, c("experiment", "control")),
          id_match = as_factor(match_group),
          id_dct = as_factor(PaperId),
          year_after_2005 = Year - 2005) 
@@ -123,7 +133,7 @@ plot_dens_overlay_limit <- function(y,
                                 n_draws = 50, 
                                 x_upper = 50){
   
-  xlab = paste0("$c_5$ distribution ", labeltext)
+  xlab = paste0("$c_5$ ", labeltext)
   p <- ppc_dens_overlay(y, yrep[1:n_draws, ]) + 
     xlim(NA, x_upper) + 
     theme(legend.position = "none",
@@ -150,7 +160,7 @@ plot_dens_overlay_free <- function(y,
                                   extra_pad = 0, 
                                   n_draws = 50){
   
-  xlab = paste0("$c_5$ distribution ", labeltext)
+  xlab = paste0("$c_5$ ", labeltext)
   p <- ppc_dens_overlay(y, yrep[1:n_draws, ]) + 
     theme(legend.position = "none",
           legend.title = element_blank(),
@@ -192,7 +202,7 @@ prior_dens <- plot_dens_overlay_limit(y = y,
 
 post_dens1 <- plot_dens_overlay_limit(y, 
                                      yrep_post, 
-                                     labeltext = "(posterior)",
+                                     labeltext = "",
                                      label, 
                                      tick,
                                      top = 5,
@@ -203,7 +213,7 @@ post_dens1 <- plot_dens_overlay_limit(y,
 
 post_dens2 <- plot_dens_overlay_free(y, 
                                      yrep_post, 
-                                     labeltext = "(posterior)",
+                                     labeltext = "",
                                      label, 
                                      tick,
                                      top = 5,
@@ -238,7 +248,7 @@ plot_hist <- function(y,
           axis.title = element_text(size = label_size),
           legend.text = element_text(size = tick_size),
           plot.margin = margin(top, right, bottom, left, unit = "pt")) +
-    labs(x = TeX("$c_5$ distribution (posterior)"))
+    labs(x = TeX("$c_5$"))
   
   return(p)
 }
@@ -277,7 +287,7 @@ plot_stat <- function(stat,
                       extra_pad, 
                       n_draws = 50){
   
-  xlab = paste0("$c_5$ ", labeltext)
+  #xlab = paste0("$c_5$ ", labeltext)
   p <- ppc_stat(y, yrep, stat = stat, binwidth = binwidth) + 
     theme(legend.position = "none",
           legend.title = element_blank(),
@@ -285,7 +295,7 @@ plot_stat <- function(stat,
           axis.title = element_text(size = label_size),
           legend.text = element_text(size = tick_size),
           plot.margin = margin(top, right, bottom, left, unit = "pt")) +
-    labs(x = TeX(xlab))
+    labs(x = TeX(labeltext))
   
   return(p)
 }
@@ -304,7 +314,7 @@ post_0 <- plot_stat(stat = "prop_zero",
                     binwidth = 0.005,
                     y = y,
                     yrep = yrep_post,
-                    labeltext = "probability of 0 (posterior)",
+                    labeltext = "$c_5 = 0$ frequency",
                     label, 
                     tick,
                     top = 5,
@@ -321,7 +331,7 @@ post_max <- plot_stat(stat = "max",
                       binwidth = 100,
                       y = y,
                       yrep = yrep_post,
-                      labeltext = "max value (posterior)",
+                      labeltext = "$c_5$ max",
                       label, 
                       tick,
                       top = 5,
@@ -338,7 +348,7 @@ post_mean = plot_stat(stat = "mean",
                       binwidth = 0.5,
                       y = y,
                       yrep = yrep_post,
-                      labeltext = "mean (posterior)",
+                      labeltext = "$c_5$ mean",
                       label, 
                       tick,
                       top = 5,
@@ -356,7 +366,7 @@ post_median = plot_stat(stat = "median",
                         binwidth = 1,
                         y = y,
                         yrep = yrep_post,
-                        labeltext = "median (posterior)",
+                        labeltext = "$c_5$ median",
                         label, 
                         tick,
                         top = 5,
@@ -372,15 +382,16 @@ post_median = plot_stat(stat = "median",
 ## -----------------------------------------------------------------------------
 
 p_grid <- plot_grid(prior_dens,
-                    post_hist,
-                    post_dens2,
+                    #post_hist,
+                    #post_dens2,
                     post_dens1,
                     post_mean,
                     post_median,
                     post_0,
                     post_max,
                     ncol = 2,
-                    nrow = 4)
+                    nrow = 3,
+                    labels = c("A", "B", "C", "D", "E", "F"))
 
 
 #' 
@@ -388,9 +399,9 @@ p_grid <- plot_grid(prior_dens,
 #' 
 ## -----------------------------------------------------------------------------
 
-ggsave(filename = paste0(outpath, "pp_ungrouped.pdf"),
+ggsave(filename = paste0(outpath, tag, "pp_ungrouped.pdf"),
        plot = p_grid,
-       height = 11,
+       height = 8.5,
        width = 8)
 
 
@@ -412,7 +423,7 @@ plot_dens_overlay_grouped <- function(y,
                                 n_draws = 50, 
                                 x_upper = 50){
   
-  xlab = paste0("$c_5$ distribution ", labeltext)
+  xlab = paste0("$c_5$ ", labeltext)
   p <- ppc_dens_overlay_grouped(y, yrep_post[1:n_draws, ], group = d$condition_fct) + 
     xlim(NA, x_upper) + 
     theme(legend.position = "none",
@@ -436,7 +447,7 @@ plot_dens_overlay_grouped <- function(y,
 
 p_dens_grouped <- plot_dens_overlay_grouped(y, 
                                            yrep_post, 
-                                           labeltext = "(posterior)",
+                                           labeltext = "",
                                            label, 
                                            tick)
 
@@ -444,7 +455,6 @@ p_dens_grouped <- plot_dens_overlay_grouped(y,
 #' 
 #' 
 ## -----------------------------------------------------------------------------
-p_dens_grouped
 
 #' 
 #' 
@@ -496,7 +506,8 @@ p_hist_grouped <- plot_stat_grouped(stat = "mean",
 ## -----------------------------------------------------------------------------
 p_grid <- plot_grid(p_dens_grouped,
                     p_hist_grouped,
-                    ncol = 1)
+                    ncol = 1,
+                    labels = c("A", "B"))
 
 #' 
 ## -----------------------------------------------------------------------------
@@ -506,7 +517,7 @@ p_grid
 #' 
 ## -----------------------------------------------------------------------------
 
-ggsave(filename = paste0(outpath, "pp_grouped.pdf"),
+ggsave(filename = paste0(outpath, tag, "pp_grouped.pdf"),
        plot = p_grid,
        height = 6,
        width = 8)

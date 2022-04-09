@@ -81,14 +81,35 @@ How does this work & what does this suggest?
 
 ```{r}
 
-plot(conditional_effects(m_post))
+plot(conditional_effects(m_post), points=TRUE)
 
 ```
+
+
+```{r}
+
+conditional_effects(x = m_post, 
+                    effect = "condition_fct", 
+                    points = TRUE) #+ 
+  #labs(y = TeX("c_5"),
+  #     x = "condition")
+
+```
+
+```{r}
+
+plot(conditional_effects(x = m_post,
+                         effect = "condition_fct:year_after_2005",
+                         conditions = conditions))
+
+```
+
 
 ## same with manual formatting & focus on log(Team Size) 
 
 ```{r}
-# with draws 
+
+# predictions of mean for the group (no random effects)
 d %>%
   group_by(condition_fct) %>%
   data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
@@ -98,9 +119,46 @@ d %>%
   ggplot(aes(x = log_teamsize, y = c_5, color= ordered(condition_fct))) +
   geom_line(aes(y = .epred, group = paste(condition_fct, .draw)), alpha = 0.25) +
   geom_point(data = d) + 
-  labs(title = "fitted draws (population estimate) for fixed year (mean) & ignore random effects")
+  labs(title = "fitted draws (population estimate) for fixed year (mean) & ignore random effects") +
+  ylim(0, 300)
 
 ```
+
+```{r}
+# unclear what this is 
+d %>%
+  group_by(condition_fct) %>%
+  data_grid(log_teamsize = seq_range(log_teamsize, n = 5),
+            id_match = id_match,
+            year_after_2005 = mean(year_after_2005)) %>% # fixed year
+  add_epred_draws(m_post, ndraws = 100, re_formula = NULL) %>% # ignore random effects
+  ggplot(aes(x = log_teamsize, y = c_5, color= ordered(condition_fct))) +
+  geom_line(aes(y = .epred, group = paste(condition_fct, .draw)), alpha = 0.25) +
+  geom_point(data = d) + 
+  labs(title = "fitted draws (population estimate) for fixed year (mean) & ignore random effects") +
+  ylim(0, 300)
+```
+
+
+```{r}
+
+# unclear what this is 
+# predictions of particular instances (with random effects uncertainty)
+d %>%
+  group_by(condition_fct) %>%
+  data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
+            #id_match = id_match,
+            year_after_2005 = mean(year_after_2005)) %>% # fixed year
+  add_predicted_draws(m_post, ndraws = 100, re_formula = NA) %>% # ignore random effects
+  ggplot(aes(x = log_teamsize, y = c_5, color= ordered(condition_fct))) +
+  geom_line(aes(y = .prediction, group = paste(condition_fct, .draw)), alpha = 0.25) +
+  geom_point(data = d) + 
+  labs(title = "fitted draws (population estimate) for fixed year (mean) & ignore random effects") +
+  ylim(0, 300)
+
+```
+
+
 
 # Conditional Effects (random effects)
 Now the effects more or less disappear, which makes more sense given the output of the model. 

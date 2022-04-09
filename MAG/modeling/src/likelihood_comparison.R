@@ -19,25 +19,33 @@ inpath <- "/work/50114/MAG/data/modeling/"
 infile <- args[1]
 outpath_models <- args[2]
 outpath_fig <- args[3]
+tag <- args[4]
 
 #' 
 #' 
 #' # setup 
 #' 
-## ----setup, include=FALSE-----------------------------------------------------
+## -----------------------------------------------------------------------------
 # consider pacman
 if (!require("pacman")){
   install.packages("pacman") # repos = "http://cran.r-project.org"
 }
 
-library(pacman)
-p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
+pacman::p_load(tidyverse, 
+               brms, 
+               ggthemes, 
+               bayesplot, 
+               cowplot, 
+               tidybayes, 
+               modelr, 
+               latex2exp, 
+               ggpubr)
 
 # set up cmdstanr if it is not already present
 if (!require('cmdstanr')){
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-library(cmdstanr)
-install_cmdstan(cores = 2, overwrite = TRUE)
+  install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+  library(cmdstanr)
+  install_cmdstan(cores = 2, overwrite = TRUE)
 }
 
 setwd(wd_code)
@@ -259,12 +267,12 @@ plot_combo <- function(m_post, filename, tick_size, label_size, height = 11, wid
   
   p <- as_draws_df(m_post) %>%
   rename(#chain = `.chain`,
-         `beta[control]` = `b_condition_fctcontrol`,
-         `beta[experiment]` = `b_condition_fctexperiment`,
-         `beta[control:teamsize]` = `b_condition_fctcontrol:log_teamsize`,
-         `beta[experiment:teamsize]` = `b_condition_fctexperiment:log_teamsize`,
-         `beta[control:year]` = `b_condition_fctcontrol:year_after_2005`,
-         `beta[experiment:year]` = `b_condition_fctexperiment:year_after_2005`) %>%
+         `beta[CONTROL]` = `b_condition_fctcontrol`,
+         `beta[EXPERIMENT]` = `b_condition_fctexperiment`,
+         `beta[CONTROL:TEAMSIZE]` = `b_condition_fctcontrol:log_teamsize`,
+         `beta[EXPERIMENT:TEAMSIZE]` = `b_condition_fctexperiment:log_teamsize`,
+         `beta[CONTROL:YEAR]` = `b_condition_fctcontrol:year_after_2005`,
+         `beta[EXPERIMENT:YEAR]` = `b_condition_fctexperiment:year_after_2005`) %>%
   mcmc_combo(combo = c("dens_overlay", "trace"),
              pars = vars(contains("beta")),
              facet_args = list(labeller = label_parsed),
@@ -287,17 +295,17 @@ plot_combo <- function(m_post, filename, tick_size, label_size, height = 11, wid
 ## -----------------------------------------------------------------------------
 
 plot_combo(m_post = m_post_negbin,
-           filename = paste0(outpath_fig, "negbin_combo.pdf"),
+           filename = paste0(outpath_fig, tag, "negbin_combo.pdf"),
            tick_size = tick,
            label_size = label)
 
 plot_combo(m_post = m_post_zip,
-           filename = paste0(outpath_fig, "zip_combo.pdf"),
+           filename = paste0(outpath_fig, tag, "zip_combo.pdf"),
            tick_size = tick,
            label_size = label)
 
 plot_combo(m_post = m_post_zinegbin,
-           filename = paste0(outpath_fig, "zinegbin_combo.pdf"),
+           filename = paste0(outpath_fig, tag, "zinegbin_combo.pdf"),
            tick_size = tick,
            label_size = label)
 
@@ -347,9 +355,9 @@ summary_diagnostics <- function(m){ # m = model
   
   # summarize 
   d_summary <- bind_rows(d_fixed, d_family, d_group) %>%
-    summarize(max_rhat = max(Rhat),
-            min_tail = min(Tail_ESS),
-            min_bulk = min(Bulk_ESS))
+    summarize(max_rhat = round(max(Rhat), 2),
+              min_tail = round(min(Tail_ESS), 2),
+              min_bulk = round(min(Bulk_ESS), 2))
   
   # return
   return(d_summary)

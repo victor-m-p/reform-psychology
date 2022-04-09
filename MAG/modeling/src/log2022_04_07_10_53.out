@@ -1,0 +1,289 @@
+-- running explore_priors.R --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- REPLICATION_FOS --
+-- running main_model.R (replication_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running prior_sensitivity.R (replication_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running likelihood_comparison.R (replication_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running updating_checks.R (replication_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running pp_checks.R (replication_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running hyp_testing.R (replication_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running simulate_predict.R (replication_fos) -- 
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- REPRODUCIBILITY_FOS --
+-- running main_model.R (reproducibility_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running prior_sensitivity.R (reproducibility_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running likelihood_comparison.R (reproducibility_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running updating_checks.R (reproducibility_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running pp_checks.R (reproducibility_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running hyp_testing.R (reproducibility_fos) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running simulate_predict.R (reproducibility_fos) -- 
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- REPLICATION_KEYWORD --
+-- running main_model.R (replication_keyword) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running prior_sensitivity.R (replication_keyword) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running likelihood_comparison.R (replication_keyword) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running updating_checks.R (replication_keyword) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running pp_checks.R (replication_keyword) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running hyp_testing.R (replication_keyword) --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+-- running simulate_predict.R (replication_keyword) -- 
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+Error in contrib.url(repos, type) : 
+  trying to use CRAN without setting a mirror
+Calls: install.packages -> startsWith -> contrib.url
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘pacman’
+Execution halted
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+unzip is already the newest version (6.0-25ubuntu1).
+zip is already the newest version (3.0-11build1).
+The following packages were automatically installed and are no longer required:
+  libarmadillo-dev libarpack2-dev libboost-dev libboost1.71-dev libcfitsio-dev
+  libcharls-dev libdap-dev libdapserver7v5 libepsilon-dev libfreexl-dev
+  libfyba-dev libgeotiff-dev libgif-dev libjson-c-dev libkml-dev
+  libkmlconvenience1 libkmlregionator1 libkmlxsd1 libminizip-dev libogdi-dev
+  libopenjp2-7-dev libpoppler-dev libpoppler-private-dev libqhull-dev
+  libqhull-r7 libspatialite-dev libsuperlu-dev liburiparser-dev libwebp-dev
+  libwebpdemux2 libxerces-c-dev libzstd-dev
+Use 'sudo apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 13 not upgraded.
+  adding: modeling/ (stored 0%)
+  adding: modeling/replication_fos/ (stored 0%)
+  adding: modeling/replication_fos/pp_checks/ (stored 0%)
+  adding: modeling/replication_fos/fit_main_model/ (stored 0%)
+  adding: modeling/replication_fos/explore_priors/ (stored 0%)
+  adding: modeling/replication_fos/updating_checks/ (stored 0%)
+  adding: modeling/replication_fos/hyp_testing/ (stored 0%)
+  adding: modeling/replication_fos/likelihood_comparison/ (stored 0%)
+  adding: modeling/replication_fos/simulate_predict/ (stored 0%)
+  adding: modeling/replication_fos/prior_sensitivity/ (stored 0%)
+  adding: modeling/replication_keyword/ (stored 0%)
+  adding: modeling/replication_keyword/pp_checks/ (stored 0%)
+  adding: modeling/replication_keyword/fit_main_model/ (stored 0%)
+  adding: modeling/replication_keyword/updating_checks/ (stored 0%)
+  adding: modeling/replication_keyword/hyp_testing/ (stored 0%)
+  adding: modeling/replication_keyword/likelihood_comparison/ (stored 0%)
+  adding: modeling/replication_keyword/simulate_predict/ (stored 0%)
+  adding: modeling/replication_keyword/prior_sensitivity/ (stored 0%)
+  adding: modeling/reproducibility_fos/ (stored 0%)
+  adding: modeling/reproducibility_fos/pp_checks/ (stored 0%)
+  adding: modeling/reproducibility_fos/fit_main_model/ (stored 0%)
+  adding: modeling/reproducibility_fos/updating_checks/ (stored 0%)
+  adding: modeling/reproducibility_fos/hyp_testing/ (stored 0%)
+  adding: modeling/reproducibility_fos/likelihood_comparison/ (stored 0%)
+  adding: modeling/reproducibility_fos/simulate_predict/ (stored 0%)
+  adding: modeling/reproducibility_fos/prior_sensitivity/ (stored 0%)

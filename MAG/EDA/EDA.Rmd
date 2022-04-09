@@ -108,10 +108,6 @@ p_c5_hist <- d %>% ggplot(aes(x = c_5, fill = condition_fct)) +
        y = "count")
 ```
 
-```{r}
-p_c5_hist
-```
-
 
 ## halfeye + box
 

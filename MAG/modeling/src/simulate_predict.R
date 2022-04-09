@@ -17,7 +17,7 @@ inpath <- "/work/50114/MAG/data/modeling/"
 infile <- args[1]
 inpath_post <- args[2]
 outpath <- args[3]
-
+tag <- args[4]
 
 
 #' 
@@ -28,14 +28,21 @@ if (!require("pacman")){
   install.packages("pacman") # repos = "http://cran.r-project.org"
 }
 
-library(pacman)
-p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr, latex2exp, ggpubr)
+pacman::p_load(tidyverse, 
+               brms, 
+               ggthemes, 
+               bayesplot, 
+               cowplot, 
+               tidybayes, 
+               modelr, 
+               latex2exp, 
+               ggpubr)
 
 # set up cmdstanr if it is not already present
 if (!require('cmdstanr')){
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-library(cmdstanr)
-install_cmdstan(cores = 2, overwrite = TRUE)
+  install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+  library(cmdstanr)
+  install_cmdstan(cores = 2, overwrite = TRUE)
 }
 
 
@@ -124,7 +131,7 @@ p <- d_pred %>% group_by(condition_fct, .prediction) %>%
   annotate("text", x = log(15), y = 9, label = TeX("$c_5 = 10$"), size = 4) + 
   annotate("text", x = log(160), y = 9, label = TeX("$c_5 = 100$"), size = 4) + 
   annotate("text", x = log(1700), y = 9, label = TeX("$c_5 = 1000$"), size = 4) + 
-  labs(title = "Model Simulated Data",
+  labs(title = "", # "Model Simulated Data",
        x = TeX("log($c_5$)"),
        y = "log(N)") +
   scale_color_manual(
@@ -143,7 +150,7 @@ p <- d_pred %>% group_by(condition_fct, .prediction) %>%
 #' 
 ## -----------------------------------------------------------------------------
 
-ggsave(filename = paste0(outpath, "model_simulation_log.pdf"),
+ggsave(filename = paste0(outpath, tag, "model_simulation_log.pdf"),
        plot = p,
        width = 8,
        height = 5.5) # half page
@@ -181,7 +188,7 @@ p <- d_pred %>% group_by(condition_fct, .prediction) %>%
                 labels = trans_format("log10", math_format(10^.x))) +
   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) +
-  labs(title = "Model Simulated Data",
+  labs(title = "", # "Model Simulated Data",
        x = TeX("$c_5$"),
        y = "N") +
   scale_color_manual(
@@ -200,7 +207,7 @@ p <- d_pred %>% group_by(condition_fct, .prediction) %>%
 #' 
 ## -----------------------------------------------------------------------------
 
-ggsave(filename = paste0(outpath, "model_simulation_power.pdf"),
+ggsave(filename = paste0(outpath, tag, "model_simulation_power.pdf"),
        plot = p,
        width = 8,
        height = 5.5)

@@ -66,6 +66,7 @@ csv_path <- paste0(inpath_csv, infile)
 d <- read_csv(csv_path) %>%
   mutate(log_teamsize = log(n_authors), 
          condition_fct = as_factor(condition), 
+         condition_fct = fct_relevel(condition_fct, c("experiment", "control")),
          id_match = as_factor(match_group),
          id_dct = as_factor(PaperId),
          year_after_2005 = Year - 2005) 
@@ -492,10 +493,6 @@ p_hist_grouped <- plot_stat_grouped(stat = "mean",
 p_grid <- plot_grid(p_dens_grouped,
                     p_hist_grouped,
                     ncol = 1)
-```
-
-```{r}
-p_grid
 ```
 
 

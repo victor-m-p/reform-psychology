@@ -17,6 +17,7 @@ args = commandArgs(trailingOnly=TRUE)
 wd_code = "/work/50114/MAG/modeling/src"
 inpath <- args[1]
 outpath <- args[2]
+tag <- args[3]
 inpath_post <- paste0(inpath, "m_post.rds")
 inpath_prior <- paste0(inpath, "m_prior.rds")
 
@@ -30,14 +31,21 @@ if (!require("pacman")){
   install.packages("pacman") # repos = "http://cran.r-project.org"
 }
 
-library(pacman)
-p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr, latex2exp, ggpubr)
+pacman::p_load(tidyverse, 
+               brms, 
+               ggthemes, 
+               bayesplot, 
+               cowplot, 
+               tidybayes, 
+               modelr, 
+               latex2exp, 
+               ggpubr)
 
 # set up cmdstanr if it is not already present
 if (!require('cmdstanr')){
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-library(cmdstanr)
-install_cmdstan(cores = 2, overwrite = TRUE)
+  install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+  library(cmdstanr)
+  install_cmdstan(cores = 2, overwrite = TRUE)
 }
 
 setwd(wd_code)
@@ -120,7 +128,8 @@ plot_update_b <- function(m_post,
             legend.title = element_blank(),
             axis.text = element_text(size = tick_size),
             axis.title = element_text(size = label_size),
-            legend.text = element_text(size = tick_size)) 
+            legend.text = element_text(size = tick_size)) +
+    xlim(0, 4)
   
   p_team <- prior_draws %>% ggplot() + 
     geom_density(aes(`b_condition_fctexperiment:log_teamsize`,
@@ -134,7 +143,8 @@ plot_update_b <- function(m_post,
                  fill = categories[3]),
                  alpha = 0.7,
                  data = post_draws) +
-    labs(x = TeX("log(Team Size) ($\\mu$)"),
+    labs(x = TeX("log(TEAMSIZE) ($\\mu$)"),
+         y = "", 
          fill = "Legend") +
     scale_fill_manual(
       breaks = categories, 
@@ -144,7 +154,8 @@ plot_update_b <- function(m_post,
           legend.title = element_blank(),
           axis.text = element_text(size = tick_size),
           axis.title = element_text(size = label_size),
-          legend.text = element_text(size = tick_size)) 
+          legend.text = element_text(size = tick_size)) +
+    xlim(-1, 2)
   
   p_year <- prior_draws %>% ggplot() + 
     geom_density(aes(`b_condition_fctexperiment:year_after_2005`,
@@ -158,7 +169,8 @@ plot_update_b <- function(m_post,
                  fill = categories[3]),
                  alpha = 0.7,
                  data = post_draws) +
-    labs(x = TeX("Year ($\\mu$)")) +
+    labs(x = TeX("YEAR ($\\mu$)"),
+         y = "") +
     scale_fill_manual(
       breaks = categories,
       values = color_map,
@@ -167,7 +179,8 @@ plot_update_b <- function(m_post,
           legend.title = element_blank(),
           axis.text = element_text(size = tick_size),
           axis.title = element_text(size = label_size),
-          legend.text = element_text(size = tick_size)) 
+          legend.text = element_text(size = tick_size)) +
+    xlim(-1, 1)
     
   p_grid <- ggarrange(p_int, p_team, p_year, ncol = 3, common.legend = TRUE, legend = 'bottom')
 
@@ -194,7 +207,7 @@ p_grid <- plot_update_b(m_post = m_post,
 ## -----------------------------------------------------------------------------
 
 filename = "updating_b.pdf"
-outname = paste0(outpath, filename)
+outname = paste0(outpath, tag, filename)
 
 ggsave(filename = outname, 
        plot = p_grid,
@@ -228,7 +241,8 @@ plot_update_other <- function(m_post,
                  fill = categories[3]),
                  alpha = 0.6,
                  data = post_draws) + 
-    labs(x = TeX("Phi ($\\phi$)")) +
+    labs(x = TeX("Phi ($\\phi$)"),
+         y = "") +
     scale_fill_manual(
       breaks = categories_sub, 
       values = color_map_sub,
@@ -237,7 +251,8 @@ plot_update_other <- function(m_post,
             legend.title = element_blank(),
             axis.text = element_text(size = tick_size),
             axis.title = element_text(size = label_size),
-            legend.text = element_text(size = tick_size)) 
+            legend.text = element_text(size = tick_size)) +
+    xlim(0, 5)
   
   p_cor <- prior_draws %>% ggplot() + 
     geom_density(aes(cor_id_match__condition_fctexperiment__condition_fctcontrol,
@@ -247,7 +262,8 @@ plot_update_other <- function(m_post,
                  fill = categories[3]),
                  alpha = 0.6,
                  data = post_draws) +
-    labs(x = "cor") +
+    labs(x = TeX("LKJ ($\\eta$)"),
+         y = "") +
     scale_fill_manual(
       breaks = categories_sub, 
       values = color_map_sub,
@@ -270,7 +286,7 @@ plot_update_other <- function(m_post,
                  fill = categories[3]),
                  alpha = 0.6,
                  data = post_draws) +
-    labs(x = "sd") +
+    labs(x = TeX("Standard deviation ($\\sigma$)")) +
     scale_fill_manual(
       breaks = categories,
       values = color_map,
@@ -279,7 +295,8 @@ plot_update_other <- function(m_post,
           legend.title = element_blank(),
           axis.text = element_text(size = tick_size),
           axis.title = element_text(size = label_size),
-          legend.text = element_text(size = tick_size)) 
+          legend.text = element_text(size = tick_size)) +
+    xlim(0, 4)
     
   p_grid <- ggarrange(p_sd, p_cor, p_shape, ncol = 3, common.legend = TRUE, legend = 'bottom')
 
@@ -304,7 +321,7 @@ p_grid <- plot_update_other(m_post = m_post,
 ## -----------------------------------------------------------------------------
 
 filename = "updating_family_group.pdf"
-outname = paste0(outpath, filename)
+outname = paste0(outpath, tag, filename)
 
 ggsave(filename = outname, 
        plot = p_grid,

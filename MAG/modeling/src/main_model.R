@@ -20,21 +20,29 @@ outpath_models <- args[2]
 #' 
 #' # VMP 2022-03-11
 #' 
-## ----setup, include=FALSE-----------------------------------------------------
+## -----------------------------------------------------------------------------
 
 # consider pacman
 if (!require("pacman")){
   install.packages("pacman") # repos = "http://cran.r-project.org"
 }
 
-library(pacman)
-p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
+pacman::p_load(tidyverse, 
+               brms, 
+               ggthemes, 
+               bayesplot, 
+               cowplot, 
+               tidybayes, 
+               modelr, 
+               latex2exp, 
+               ggpubr)
 
 # set up cmdstanr if it is not already present
 if (!require('cmdstanr')){
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-library(cmdstanr)
-install_cmdstan(cores = 2, overwrite = TRUE)
+  print("installing cmdstanr")
+  install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+  library(cmdstanr)
+  install_cmdstan(cores = 2, overwrite = TRUE)
 }
 
 setwd(wd_code)

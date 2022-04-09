@@ -16,25 +16,34 @@ inpath <- "/work/50114/MAG/data/modeling/"
 infile <- args[1]
 outpath_models <- args[2]
 outpath_fig <- args[3]
+tag <- args[4]
+
 
 #' 
 #' # VMP 2022-03-11
 #' 
-## ----setup, include=FALSE-----------------------------------------------------
+## ---- include=FALSE-----------------------------------------------------------
 
 # consider pacman
 if (!require("pacman")){
   install.packages("pacman") # repos = "http://cran.r-project.org"
 }
 
-library(pacman)
-p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr)
+pacman::p_load(tidyverse, 
+               brms, 
+               ggthemes, 
+               bayesplot, 
+               cowplot, 
+               tidybayes, 
+               modelr, 
+               latex2exp, 
+               ggpubr)
 
 # set up cmdstanr if it is not already present
 if (!require('cmdstanr')){
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-library(cmdstanr)
-install_cmdstan(cores = 2, overwrite = TRUE)
+  install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+  library(cmdstanr)
+  install_cmdstan(cores = 2, overwrite = TRUE)
 }
 
 setwd(wd_code)
@@ -42,12 +51,13 @@ source("fun_helper.R")
 
 
 #' 
+#' 
 #' # read data and create some variables
 #' ## (1) temsize log. 
 #' ## (2) match group as id 
 #' 
 #' 
-## ----setup, include=FALSE-----------------------------------------------------
+## -----------------------------------------------------------------------------
 
 csv_path <- paste0(inpath, infile)
 
@@ -55,10 +65,10 @@ csv_path <- paste0(inpath, infile)
 d <- read_csv(csv_path) %>%
   mutate(log_teamsize = log(n_authors), 
          condition_fct = as_factor(condition), 
-         condition_fct = fct_relevel(condition_fct, c("experiment", "control")),
          id_match = as_factor(match_group),
          id_dct = as_factor(PaperId),
-         year_after_2005 = Year - 2005) 
+         year_after_2005 = Year - 2005) %>% 
+  glimpse()
 
 
 #' 
@@ -76,7 +86,7 @@ f <- bf(c_5 ~ 0 + condition_fct + condition_fct:log_teamsize + condition_fct:yea
 #' * sd: match and both conditions.
 #' * shape: overdispersion parameter for negative binomial.
 #' 
-## ----setup, include=FALSE-----------------------------------------------------
+## -----------------------------------------------------------------------------
 
 get_prior(
   formula = f,
@@ -204,8 +214,11 @@ for (i in 1:length(priSD)){
 light_color = "#fe8a2f"
 dark_color = "#7f3f0c"
 theme_set(theme_classic())
-width = 8
-height = 4
+# width = 8
+# height = 4
+title = 18
+label = 14
+tick = 12
 
 
 #' 
@@ -230,24 +243,24 @@ y_min <- int_ylim$y_min
 y_max <- int_ylim$y_max
 
 # plot 
-p <- int_data %>% ggplot(aes(x = priSD, y = int_ci_est, color = condition)) + 
+p_intercept <- int_data %>% ggplot(aes(x = priSD, y = int_ci_est, color = condition)) + 
   geom_point(size = 3) + 
   geom_pointrange(ymin = int_ci_lower, ymax = int_ci_upper) + 
   ylim(y_min, y_max) +
-  labs(x="Standard deviation of intercept prior",
-       y="Posterior estimate of intercept difference", 
-       title="Sensitivity analysis (intercept)") +
-  theme(plot.title = element_text(hjust = 0.5)) + 
+  labs(x = "", 
+       y = TeX("Group difference ($\\mu$)"), 
+       title = "Intercept") + 
   scale_color_manual(
     breaks = c("Prior (main model)", "Prior (sensitivity)"),
-    values = c(dark_color, light_color))
+    values = c(dark_color, light_color),
+    guide = guide_legend(title = NULL)) +
+  theme(plot.title = element_text(hjust = 0.5, size = title),
+        axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        legend.position = "none")
 
-# save 
-outname = paste0(outpath_fig, "intercept.pdf")
-ggsave(filename = outname, plot = p, width = width, height = height)
 
 
-#' 
 #' 
 #' ## teamsize interaction difference
 #' 
@@ -268,24 +281,21 @@ y_min <- team_ylim$y_min
 y_max <- team_ylim$y_max
 
 # plot 
-p <- team_data %>% ggplot(aes(x = priSD, y = team_ci_est, color = condition)) + 
+p_team <- team_data %>% ggplot(aes(x = priSD, y = team_ci_est, color = condition)) + 
   geom_point(size = 3) + 
   geom_pointrange(ymin = team_ci_lower, ymax = team_ci_upper) + 
   ylim(y_min, y_max) +
-  labs(x="Standard deviation of interaction prior",
-       y="Posterior estimate for interaction difference", 
-       title="Sensitivity analysis (teamsize)") + 
-  theme(plot.title = element_text(hjust = 0.5)) + 
+  labs(x = "", 
+       y = "", #TeX("Group difference ($\\mu$)"), 
+       title = "TEAMSIZE") + 
+  theme(plot.title = element_text(hjust = 0.5, size = title),
+        axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        legend.position = "none") + 
   scale_color_manual(
     breaks = c("Prior (main model)", "Prior (sensitivity)"),
-    values = c(dark_color, light_color))
-
-# save 
-outname = paste0(outpath_fig, "teamsize.pdf")
-ggsave(filename = outname, 
-       plot = p,
-       width = width,
-       height = height)
+    values = c(dark_color, light_color),
+    guide = guide_legend(title = NULL))
 
 
 #' 
@@ -308,24 +318,57 @@ y_min <- year_ylim$y_min
 y_max <- year_ylim$y_max
 
 # plot 
-p <- year_data %>% ggplot(aes(x = priSD, y = year_ci_est, color = condition)) + 
+p_year <- year_data %>% ggplot(aes(x = priSD, y = year_ci_est, color = condition)) + 
   geom_point(size = 3) + 
   geom_pointrange(ymin = year_ci_lower, ymax = year_ci_upper) + 
   ylim(y_min, y_max) +
-  labs(x="Standard deviation of interaction prior",
-       y="Posterior estimate for interaction difference", 
-       title="Sensitivity analysis (year after 2005)") + 
-  theme(plot.title = element_text(hjust = 0.5)) + 
+  labs(x = "", # TeX("Prior standard deviation ($\\sigma$)"),
+       y = "", #TeX("Group difference ($\\mu$)"), 
+       title = "YEAR") + 
+  theme(plot.title = element_text(hjust = 0.5, size = title),
+        axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        #legend.text = element_text(size = tick),
+        legend.position = "none") + 
     scale_color_manual(
-    breaks = c("Prior (main model)", "Prior (sensitivity)"),
-    values = c(dark_color, light_color))
+      breaks = c("Prior (main model)", "Prior (sensitivity)"),
+      values = c(dark_color, light_color),
+      guide = guide_legend(title = NULL))
 
-# save 
-outname = paste0(outpath_fig, "year.pdf")
-ggsave(filename = outname, 
-       plot = p,
-       width = width,
-       height = height)
+
+#' 
+#' ## gather plot
+#' 
+## -----------------------------------------------------------------------------
+
+p_grid <- ggarrange(p_intercept, 
+                    p_team, 
+                    p_year, 
+                    ncol = 3,
+                    labels = c("A", "B", "C")
+                    )  
+                    #common.legend = TRUE, 
+                    #legend = "right") 
+
+
+#' 
+#' ## annotate 
+#' 
+## -----------------------------------------------------------------------------
+
+p_annotate <- annotate_figure(p = p_grid, 
+                              bottom = text_grob(TeX("Prior standard deviation ($\\sigma$)"), size = label, vjust = -0.5))
+
+
+#' 
+#' ## save plot
+#' 
+## -----------------------------------------------------------------------------
+
+ggsave(filename = paste0(outpath_fig, tag, "c5_distribution.pdf"), 
+       plot = p_annotate,
+       width = 8,
+       height = 3)
 
 
 #' 

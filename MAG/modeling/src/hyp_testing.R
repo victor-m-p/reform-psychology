@@ -13,6 +13,7 @@ args = commandArgs(trailingOnly=TRUE)
 ## outpath <- "/work/50114/MAG/fig/modeling/replication_fos/hyp_testing/"
 inpath_post <- args[1]
 outpath <- args[2]
+tag <- args[3]
 
 #' 
 ## -----------------------------------------------------------------------------
@@ -22,14 +23,21 @@ if (!require("pacman")){
   install.packages("pacman") # repos = "http://cran.r-project.org"
 }
 
-library(pacman)
-p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr, latex2exp, ggpubr)
+pacman::p_load(tidyverse, 
+               brms, 
+               ggthemes, 
+               bayesplot, 
+               cowplot, 
+               tidybayes, 
+               modelr, 
+               latex2exp, 
+               ggpubr)
 
 # set up cmdstanr if it is not already present
 if (!require('cmdstanr')){
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-library(cmdstanr)
-install_cmdstan(cores = 2, overwrite = TRUE)
+  install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+  library(cmdstanr)
+  install_cmdstan(cores = 2, overwrite = TRUE)
 }
 
 
@@ -117,10 +125,10 @@ plot_hypothesis <- function(h, title, tick_size, label_size, xlab, annotate_size
 ## -----------------------------------------------------------------------------
 
 p_intercept <- plot_hypothesis(h = h_intercept,
-                               title = "Intercept (Year = 2005, Team Size = 1)",
+                               title = "",
                                tick_size = tick,
                                label_size = label,
-                               xlab = '',
+                               xlab = 'Intercept ($\\mu$)',
                                annotate_size = 1,
                                x_lower = -2,
                                x_upper = 2,
@@ -133,10 +141,10 @@ p_intercept <- plot_hypothesis(h = h_intercept,
 ## -----------------------------------------------------------------------------
 
 p_teamsize <- plot_hypothesis(h = h_teamsize,
-                              title = "Team Size (log)",
+                              title = "",
                               tick_size = tick,
                               label_size = label,
-                              xlab = '',
+                              xlab = 'log(TEAMSIZE) ($\\mu$)',
                               annotate_size = 1,
                               x_lower = -2,
                               x_upper = 2,
@@ -149,10 +157,10 @@ p_teamsize <- plot_hypothesis(h = h_teamsize,
 ## -----------------------------------------------------------------------------
 
 p_year <- plot_hypothesis(h = h_year, 
-                          title = "Year after 2005",
+                          title = "",
                           tick_size = tick,
                           label_size = label,
-                          xlab = '$c_5$ difference',
+                          xlab = 'YEAR ($\\mu$)',
                           annotate_size = 1 - 0.2,
                           x_lower = -2,
                           x_upper = 2,
@@ -169,7 +177,8 @@ p_grid <- ggarrange(p_intercept,
                     p_year, 
                     ncol = 1, 
                     common.legend = TRUE, 
-                    legend = 'bottom')
+                    legend = 'bottom',
+                    labels = c("A", "B", "C"))
 
 
 #' 
@@ -182,7 +191,7 @@ p_grid
 #' 
 ## -----------------------------------------------------------------------------
 
-ggsave(filename = paste0(outpath, "hyp.pdf"),
+ggsave(filename = paste0(outpath, tag, "hyp.pdf"),
        plot = p_grid,
        width = 8,
        height = 11)
@@ -218,7 +227,7 @@ d_intercept <- hypothesis2df(h_intercept)
 d_teamsize <- hypothesis2df(h_teamsize)
 d_year <- hypothesis2df(h_year)
 d_summary <- bind_rows(d_intercept, d_teamsize, d_year)
-write_csv(d_summary, paste0(outpath, "hyp.csv"))
+write_csv(d_summary, paste0(outpath, tag, "hyp.csv"))
 
 
 #' 
@@ -252,10 +261,10 @@ h_year_outcome <- hypothesis(m_post,
 ## -----------------------------------------------------------------------------
 
 p_intercept_outcome <- plot_hypothesis(h = h_intercept_outcome,
-                                       title = "Intercept (Year = 2005, Team Size = 1)",
+                                       title = "",
                                        tick_size = tick,
                                        label_size = label,
-                                       xlab = '',
+                                       xlab = 'Intercept ($\\mu$)',
                                        annotate_size = 0.8,
                                        x_lower = -25,
                                        x_upper = 25,
@@ -268,10 +277,10 @@ p_intercept_outcome <- plot_hypothesis(h = h_intercept_outcome,
 ## -----------------------------------------------------------------------------
 
 p_teamsize_outcome <- plot_hypothesis(h = h_teamsize_outcome,
-                                      title = "Team Size (log)",
+                                      title = "",
                                       tick_size = tick,
                                       label_size = label,
-                                      xlab = '',
+                                      xlab = 'log(TEAMSIZE) ($\\mu$)',
                                       annotate_size = 0.8,
                                       x_lower = -5,
                                       x_upper = 5,
@@ -284,13 +293,13 @@ p_teamsize_outcome <- plot_hypothesis(h = h_teamsize_outcome,
 ## -----------------------------------------------------------------------------
 
 p_year_outcome <- plot_hypothesis(h = h_year_outcome, 
-                                  title = "Year after 2005",
+                                  title = "",
                                   tick_size = tick,
                                   label_size = label,
-                                  xlab = '$c_5$ difference',
+                                  xlab = 'YEAR ($\\mu$)',
                                   annotate_size = 0.8 - 0.2,
-                                  x_lower = -2.5,
-                                  x_upper = 2.5,
+                                  x_lower = -2,
+                                  x_upper = 2,
                                   legend_pos = "bottom")
 
 
@@ -304,7 +313,8 @@ p_grid_outcome <- ggarrange(p_intercept_outcome,
                             p_year_outcome, 
                             ncol = 1, 
                             common.legend = TRUE, 
-                            legend = 'bottom')
+                            legend = 'bottom',
+                            labels = c("A", "B", "C"))
 
 
 #' 
@@ -312,7 +322,7 @@ p_grid_outcome <- ggarrange(p_intercept_outcome,
 #' 
 ## -----------------------------------------------------------------------------
 
-ggsave(filename = paste0(outpath, "hyp_outcome.pdf"),
+ggsave(filename = paste0(outpath, tag, "hyp_outcome.pdf"),
        plot = p_grid_outcome,
        width = 8,
        height = 11)
@@ -327,7 +337,7 @@ d_intercept_outcome <- hypothesis2df(h_intercept_outcome)
 d_teamsize_outcome <- hypothesis2df(h_teamsize_outcome)
 d_year_outcome <- hypothesis2df(h_year_outcome)
 d_summary_outcome <- bind_rows(d_intercept_outcome, d_teamsize_outcome, d_year_outcome)
-write_csv(d_summary_outcome, paste0(outpath, "hyp_outcome.csv"))
+write_csv(d_summary_outcome, paste0(outpath, tag, "hyp_outcome.csv"))
 
 
 #' 

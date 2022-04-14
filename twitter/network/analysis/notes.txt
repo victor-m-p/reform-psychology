@@ -1,0 +1,13 @@
+#### edge attributes ####
+query = "openscience"
+cutoff = 5
+n_labels = 40
+outfolder = '/work/50114/twitter/fig/network/simple'
+inpath = "/work/50114/twitter/data/network"
+
+
+    ap.add_argument("-i", "--inpath", required = True, type = str, help = "path to input folder (edgelist_simple)")
+    ap.add_argument("-o", "--outpath", required = True, type = str, help = "path to output folder (for pdfs)")
+    ap.add_argument("-q", "--query", required = True, type = str, help = "query, e.g. openscience")
+    ap.add_argument("-c", "--cutoff", required = True, type = int, help =  "edges with weight below cutoff excluded")
+    ap.add_argument("-n", "--nlabels", required = True, type = int, help = "how many labels to display")  

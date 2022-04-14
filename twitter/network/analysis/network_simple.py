@@ -9,6 +9,7 @@ to-do:
 * robust in terms of network size (scaling)
 * check if they are GCC
 * n_labels in main so that it gets saved. 
+* set it up to run nicer
 
 time: 
 * N = 23719, execution: 4.5 minutes. 
@@ -21,16 +22,14 @@ import re
 import networkx as nx 
 import matplotlib.pyplot as plt 
 import timeit
-
-# visual setup 
-
-# load file 
-starttime = timeit.default_timer()
-query = 'openscience'
-df = pd.read_csv(f"/work/50114/twitter/data/network/preprocessed/{query}_edgelist_simple.csv")
+from pathlib import Path
+import argparse 
 
 # get maximum, important for dividing. 
 def get_maximum(df): 
+    '''
+    df: <pd.dataframe> 
+    '''
     max_edge = df["weight"].max() 
     df_from = df.groupby('username_from')['weight'].sum().reset_index().rename(columns = {
         'username_from': 'username',
@@ -43,18 +42,15 @@ def get_maximum(df):
     max_node = df_gathered["total_weight"].max()
     return max_edge, max_node
 
-df = df[df["weight"] > 5]
-print(f"length: {len(df)}")
-max_edge, max_node = get_maximum(df)
-
-# networkx 
-G = nx.from_pandas_edgelist(df, source='username_from', target='username_to', edge_attr='weight', create_using=nx.DiGraph())
-
-#### edge attributes ####
-
-# width by weight
-edge_weights = nx.get_edge_attributes(G, 'weight').values() 
-
+def subset_cutoff(df, n):
+    '''
+    df: <pd.dataframe> 
+    n: <int> 
+    '''
+    print(f"before cut-off: {len(df)}")
+    df = df[df["weight"] > n]
+    print(f"after cut-off: {len(df)}")
+    return df
 
 #### node size ####
 def degree_information(G, method, metric):
@@ -68,9 +64,6 @@ def degree_information(G, method, metric):
     nx.set_node_attributes(G, degree, metric)
     degree = nx.get_node_attributes(G, metric).values()
     return degree
-
-# size by degree
-weighted_degree = degree_information(G, G.degree(weight='weight'), "weighted_degree")
 
 #### add labels for central actors ####
 def get_labels(G, type_str, type_lst, n_labels):
@@ -96,13 +89,8 @@ def get_labels(G, type_str, type_lst, n_labels):
     
     return labeldict 
 
-n_labels = 40
-labeldict_degreew = get_labels(G, 'weighted_degree', weighted_degree, n_labels)
-
-#### author information #### 
-
 #### plot ####
-def plot_network(G, node_size_lst, edge_width_lst, node_divisor, edge_divisor, title, filename, outfolder, seed = 8, k = None, labeldict = None):
+def plot_network(G, node_size_lst, edge_width_lst, node_divisor, edge_divisor, title, filename, outfolder, seed, k, labeldict = None):
     '''
     G: <networkx.classes.digraph.DiGraph> 
     node_size_lst: <list> node sizes 
@@ -142,46 +130,103 @@ def plot_network(G, node_size_lst, edge_width_lst, node_divisor, edge_divisor, t
     plt.tight_layout()
     plt.savefig(f"{outfolder}/{filename}_seed{seed}_k{k}_labels{labels}.png", bbox_inches='tight')
 
-# create the plot where we zoom
-node_divisor = max_node / 1800 # (2) max_node / (max_node/2)
-edge_divisor = max_edge / 3 # (10) max_edge / (max_edge/10)
+def main(inpath, outpath, query, cutoff, nlabels): 
 
-title = f'{query} network'
-outfolder = '/work/50114/twitter/fig/network/simple'
-filename = f'{query}'
+    # set vars 
+    k = None 
+    seed = 8
+    
+    # check vars
+    print(query)
+    print(cutoff)
+    print(nlabels)
 
-plot_network(
-    G = G, 
-    node_size_lst = weighted_degree, 
-    edge_width_lst = edge_weights, 
-    node_divisor = node_divisor,
-    edge_divisor = edge_divisor,
-    title = title,
-    filename = filename,
-    outfolder = outfolder,
-    labeldict = labeldict_degreew
-)
+    # timeit
+    starttime = timeit.default_timer()
 
-endtime = timeit.default_timer()
-totaltime = endtime - starttime 
-print(f"execution time: {round(totaltime/60, 2)} minutes")
+    # read data
+    df = pd.read_csv(f"{inpath}/{query}_edgelist_simple.csv")
+    print(df.head)
 
+    # subset data (cutoff = 0 if to avoid)
+    df = subset_cutoff(df, cutoff) 
 
-# create the plot where we do not zoom
-node_divisor = max_node / 900 # (1)
-edge_divisor = max_edge / 8 # (2)
+    # networkx 
+    G = nx.from_pandas_edgelist(df, source='username_from', target='username_to', edge_attr='weight', create_using=nx.DiGraph())
 
-title = f'{query} network'
-outfolder = '/work/50114/twitter/fig/network/simple'
-filename = f'{query}'
+    # get maximum edge and node (for division)
+    max_edge, max_node = get_maximum(df)
 
-plot_network(
-    G = G, 
-    node_size_lst = weighted_degree, 
-    edge_width_lst = edge_weights, 
-    node_divisor = node_divisor, 
-    edge_divisor = edge_divisor, 
-    title = title, 
-    filename = filename, 
-    outfolder = outfolder
-)
+    # width by weight
+    edge_weights = nx.get_edge_attributes(G, 'weight').values() 
+
+    # size by degree
+    weighted_degree = degree_information(G, G.degree(weight='weight'), "weighted_degree")
+
+    # labels
+    labeldict_degreew = get_labels(G, 'weighted_degree', weighted_degree, nlabels)
+
+    #### author information #### 
+    # create the plot where we zoom
+    node_divisor = max_node / 1800 # (2) max_node / (max_node/2)
+    edge_divisor = max_edge / 3 # (10) max_edge / (max_edge/10)
+
+    # plot set-up
+    filename = f'{query}_ZOOM'
+    title = "" # no title for now 
+
+    # plot it 
+    plot_network(
+        G = G, 
+        node_size_lst = weighted_degree, 
+        edge_width_lst = edge_weights, 
+        node_divisor = node_divisor,
+        edge_divisor = edge_divisor,
+        title = title,
+        filename = filename,
+        outfolder = outpath,
+        seed = seed,
+        k = k,
+        labeldict = labeldict_degreew
+    )
+
+    #### create the plot where we do not zoom ####
+    node_divisor = max_node / 900 # (1)
+    edge_divisor = max_edge / 8 # (2)
+
+    filename = f'{query}_NOZOOM'
+
+    plot_network(
+        G = G, 
+        node_size_lst = weighted_degree, 
+        edge_width_lst = edge_weights, 
+        node_divisor = node_divisor, 
+        edge_divisor = edge_divisor, 
+        title = title, 
+        filename = filename, 
+        outfolder = outpath,
+        seed = seed,
+        k = k
+    )
+    
+    endtime = timeit.default_timer()
+    totaltime = endtime - starttime 
+    print(f"execution time: {round(totaltime/60, 2)} minutes")
+
+if __name__ == '__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-i", "--inpath", required = True, type = str, help = "path to input folder (edgelist_simple)")
+    ap.add_argument("-o", "--outpath", required = True, type = str, help = "path to output folder (for pdfs)")
+    ap.add_argument("-q", "--query", required = True, type = str, help = "query, e.g. openscience")
+    ap.add_argument("-c", "--cutoff", required = True, type = int, help =  "edges with weight below cutoff excluded")
+    ap.add_argument("-n", "--nlabels", required = True, type = int, help = "how many labels to display")  
+
+    args = vars(ap.parse_args())
+
+    main(
+        inpath = args["inpath"],
+        outpath = args["outpath"],
+        query = args["query"],
+        cutoff = args["cutoff"],
+        nlabels = args["nlabels"]
+    )

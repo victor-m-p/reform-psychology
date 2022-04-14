@@ -2,8 +2,6 @@
 VMP 2022-03-04: 
 creating edgelist.
 need a required (FALSE) in the add_arguments() 
-
-NB: in this network "original" tweets are not used because they do not reference. 
 '''
 
 # imports 

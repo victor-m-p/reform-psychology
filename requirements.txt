@@ -9,7 +9,7 @@ pdfminer
 nltk
 spacy
 spacytextblob
-networkx
+networkx==2.6.3
 nxviz
 setuptools
 wheel

@@ -11,6 +11,7 @@ inpath <- "/work/50114/MAG/data/modeling/"
 infile <- "psychology_replication_matched.csv"
 outpath <- "/work/50114/MAG/fig/modeling/replication_fos/simulate_predict/"
 inpath_post <- "/work/50114/MAG/modeling/models/replication_fos/main_model/m_post.rds"
+tag <- "replication_"
 
 ```
 
@@ -50,6 +51,8 @@ color_map <- c("Control" = '#fdae6b',
 
 categories <- c("Control",
                 "Experiment")
+
+clrs = c("#1b9e77", "#d95f02") # c('#e6550d', '#fdae6b')
 
 ```
 
@@ -141,7 +144,6 @@ p
 
 ```
 
-
 ## save power plot
 
 ```{r}
@@ -199,84 +201,35 @@ https://cran.r-project.org/web/packages/tidybayes/vignettes/tidy-brms.html
 We should do it for minimum values instaed of mean values & 
 then provide it with more uncertainty in SI. 
 
-### functions
+#### TEAMSIZE 
 
-TEAMSIZE draws (Kruschke) mean study and min YEAR (2005).
-
-EXPLANATION: 
-Based on our fitted BETA values (population) we plot draws of the
-expected value (mean). NB: this is still more robust than not including
-random effects in the original model, because our population estimates
-are also affected by the random effects which we have modeled. We keep
-YEAR fixed at mean (year = 2010) and vary TEAMSIZE over a grid within
-the observed values (min and max observed TEAMSIZE). As such, the model
-returns expected values for levels of TEAMSIZE that are not observed 
-(e.g. TEAMSIZE = 1.5) and in this sense it is a counter-factual plot. 
-
+##### Create data
 
 ```{r}
 
-draws_team_min <- function(d, ylim){
-  
-  # fitted means (draws for mean)
-  d %>%
+# fix year at min
+d_team_min <- d %>%
     group_by(condition_fct) %>%
-    data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
+    data_grid(log_teamsize = seq_range(log_teamsize, n = 101), # sequence of values
               year_after_2005 = min(year_after_2005)) %>% # fixed year
-    add_epred_draws(m_post, ndraws = 100, re_formula = NA) %>% # ignore random effects
-    ggplot(aes(x = log_teamsize, y = c_5, color= ordered(condition_fct))) +
-    geom_line(aes(y = .epred, group = paste(condition_fct, .draw)), alpha = 0.25) +
-    geom_point(data = d) + 
-    labs(title = "Expected Value (mean actor)") +
-    ylim(0, ylim)
-  
-}
+    add_epred_draws(m_post, re_formula = NA) # no random eff. uncertainty
 
 ```
 
-Same as above but with CI bands
+##### Natural scale
 
 ```{r}
 
-CI_team_min <- function(d, ylim){
+plt_team_nat <- function(draws, d, clrs, xlim, ylim){
   
-  # fitted means (draws for mean)
-  d %>%
-    group_by(condition_fct) %>%
-    data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
-              year_after_2005 = min(year_after_2005)) %>% # fixed year
-    add_epred_draws(m_post, re_formula = NA) %>% # ignore random effects
-    ggplot(aes(x = log_teamsize, y = c_5, color = ordered(condition_fct), fill = ordered(condition_fct))) +
+  p <- draws %>% ggplot(aes(x = exp(log_teamsize), 
+                       y = c_5, 
+                       color = ordered(condition_fct), 
+                       fill = ordered(condition_fct))) +
+    geom_jitter(data = d, alpha = 0.1) + 
     stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
-    geom_jitter(data = d) + 
-    labs(title = "Expected Value (mean actor)") +
-    ylim(0, ylim)
-  
-}
-```
-
-TEAMSIZE draws (CI bands) mean study and observed YEARS (varies)
-
-```{r}
-d %>% glimpse()
-```
-
-
-```{r}
-
-CI_team_vary <- function(d, ylim){
-  
-  # fitted means (draws for mean)
-  d %>%
-    group_by(condition_fct) %>%
-    data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
-              year_after_2005 = year_after_2005) %>% # fixed year
-    add_epred_draws(m_post, re_formula = NA) %>% # ignore random effect
-    ggplot(aes(x = log_teamsize, y = c_5, color = ordered(condition_fct), fill = ordered(condition_fct))) +
-    geom_jitter(data = d, alpha = 0.8) + 
-    stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
-    labs(title = "", #  "Expected Value (mean actor)",
-         x = "log(TEAMSIZE)",
+    labs(title = "Average", #  "Expected Value (mean actor)",
+         x = "TEAMSIZE",
          y = TeX("$c_5$")) +
     theme(plot.title = element_text(hjust = 0.5, size = title),
           axis.text = element_text(size = tick),
@@ -284,85 +237,42 @@ CI_team_vary <- function(d, ylim){
           legend.text = element_text(size = tick),
           legend.position = "bottom") +
     scale_color_manual(
-      values = c('#e6550d', '#fdae6b'),
+      values = clrs,
       guide = guide_legend(title = NULL)) +
     scale_fill_manual(
-      values = c('#e6550d', '#fdae6b'),
-      guide = guide_legend(title = NULL)) +
-    ylim(0, ylim)
-  
-}
-
-```
-
-```{r}
-CI_team_vary(d, 500)
-```
-## test 
-
-```{r}
-d_test <- d %>%
-  group_by(condition_fct) %>%
-  data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
-            year_after_2005 = year_after_2005) %>% # fixed year
-  add_epred_draws(m_post, re_formula = NA)
-  
-```
-
-```{r}
-d_test %>% glimpse()
-```
-
-
-```{r}
-CI_team_vary_natural <- function(d, ylim, xlim){
-  
-  # fitted means (draws for mean)
-  d %>%
-    group_by(condition_fct) %>%
-    data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
-              year_after_2005 = year_after_2005) %>% # fixed year
-    add_epred_draws(m_post, re_formula = NA) %>% # ignore random effect
-    ggplot(aes(x = exp(log_teamsize), y = c_5, color = ordered(condition_fct), fill = ordered(condition_fct))) +
-    geom_jitter(data = d, alpha = 0.8) + 
-    stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
-    labs(title = "", #  "Expected Value (mean actor)",
-         x = "log(TEAMSIZE)",
-         y = TeX("$c_5$")) +
-    theme(plot.title = element_text(hjust = 0.5, size = title),
-          axis.text = element_text(size = tick),
-          axis.title = element_text(size = label),
-          legend.text = element_text(size = tick),
-          legend.position = "bottom") +
-    scale_color_manual(
-      values = c('#e6550d', '#fdae6b'),
-      guide = guide_legend(title = NULL)) +
-    scale_fill_manual(
-      values = c('#e6550d', '#fdae6b'),
+      values = clrs,
       guide = guide_legend(title = NULL)) +
     ylim(0, ylim) +
     xlim(0, xlim)
   
+  return(p)
+  
 }
+  
 ```
 
-```{r}
-max(d$n_authors)
-```
+##### All data 
 
-
-```{r}
-
-CI_team_vary_natural(d, 300, max(d$n_authors))
-
-```
+min team
 
 ```{r}
 
-CI_team_vary_natural(d, 150, 20)
+y_max = quantile(d_team_min$.epred, .9999)
+p_team_full <- plt_team_nat(d_team_min, d, clrs, max(d$n_authors), y_max)
 
 ```
 
+#### Capped (& min year)
+
+```{r}
+
+dsub <- d_team_min %>% filter(exp(log_teamsize) <= 20)
+y_max <- quantile(dsub$.epred, .9999)
+p_team_lim <- plt_team_nat(d_team_min, d, clrs, 20, y_max)
+
+```
+
+##### Marginalized (Natural Scale)
 
 TEAMSIZE draws (CI bands) marginalized study and mean YEAR (2010).
 
@@ -374,208 +284,263 @@ to new population??
 
 ```{r}
 
-CI_team_marginalized <- function(d, ylim){
+CI_team_marginalized <- function(d, clrs, xlim){
   
   # fitted means (marginalized)
   base_id = 2000
   levels <- nrow(d)/2
   max_id = base_id + levels - 1
   
-  d %>%
+  draws <- d %>%
     group_by(condition_fct) %>%
     data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
               id_match = as_factor(rep(base_id:max_id, each = 2)),
-              year_after_2005 = min(year_after_2005)) %>% # fixed year (mean = 2010). 
-    add_epred_draws(m_post, ndraws = 50, re_formula = NULL, allow_new_levels =TRUE) %>% # marginalize 
-    ggplot(aes(x = log_teamsize, y = c_5, color = ordered(condition_fct), fill = ordered(condition_fct))) +
-      stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
-      geom_jitter(data = d) +
-      scale_fill_brewer(palette = "Set2") +
-      scale_color_brewer(palette = "Dark2") +
-    ylim(0, ylim)
-    
+              year_after_2005 = min(year_after_2005)) %>% # fixed year
+    add_epred_draws(m_post, ndraws = 100, re_formula = NULL, allow_new_levels = TRUE) # marginalize 
+  
+  draws_sub <- draws %>% filter(exp(log_teamsize) <= xlim)
+  ymax <- quantile(draws_sub$.epred, .999)
+  
+  p <- draws %>% 
+    ggplot(aes(x = exp(log_teamsize), 
+               y = c_5, 
+               color = ordered(condition_fct), 
+               fill = ordered(condition_fct))) +
+    geom_jitter(data = d, alpha = 0.1) + 
+    stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
+    labs(title = "Marginal", #  "Expected Value (mean actor)",
+         x = "TEAMSIZE",
+         y = TeX("$c_5$")) +
+    theme(plot.title = element_text(hjust = 0.5, size = title),
+          axis.text = element_text(size = tick),
+          axis.title = element_text(size = label),
+          legend.text = element_text(size = tick),
+          legend.position = "bottom") +
+    scale_color_manual(
+      values = clrs,
+      guide = guide_legend(title = NULL)) +
+    scale_fill_manual(
+      values = clrs,
+      guide = guide_legend(title = NULL)) +
+    ylim(0, ymax) +
+    xlim(0, xlim)
+  
+  return(p)
+  
 }
+
 ```
 
 ## DRAW THEM 
 
+Still need to really understand this. 
+We are interested in the mean still (epred) 
+but now we draw from everything. 
+I thought that what we did was draw from everything and take the mean a lot of times -- 
+which could never result in this much uncertainty...?
+
 ```{r}
 
-draws_team_min(d, 300)
+p_team_marginalize_lim <- CI_team_marginalized(d, clrs, 20)
 
 ```
 
 ```{r}
 
-CI_team_min(d, 500)
+p_team_marginalize_full <- CI_team_marginalized(d, clrs, max(d$n_authors))
+
+```
+
+#### GATHER IN FIG (lim) ####
+
+```{r}
+
+p_grid <- ggarrange(p_team_lim,
+                    p_team_marginalize_lim, 
+                    ncol = 2, 
+                    common.legend = TRUE, 
+                    legend = 'bottom',
+                    labels = c("A", "B"))
+
 
 ```
 
 ```{r}
 
-CI_team_vary(d, 500)
+ggsave(filename = paste0(outpath, tag, "conditional_team_lim.pdf"),
+       plot = p_grid,
+       width = 8,
+       height = 4)
+
+```
+
+#### GATHER IN FIG (full) ####
+
+```{r}
+
+p_grid <- ggarrange(p_team_full,
+                    p_team_marginalize_full, 
+                    ncol = 2, 
+                    common.legend = TRUE, 
+                    legend = 'bottom',
+                    labels = c("A", "B"))
+
 
 ```
 
 ```{r}
 
-CI_team_marginalized(d, 1000)
+ggsave(filename = paste0(outpath, tag, "conditional_team_full.pdf"),
+       plot = p_grid,
+       width = 8,
+       height = 4)
 
 ```
 
-### TEAMSIZE
+#### YEAR 
 
-#### kruschke-style 
+##### create data
 
 ```{r}
 
-# fitted means (draws for mean)
-d %>%
-  group_by(condition_fct) %>%
-  data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
-            #id_match = id_match,
-            year_after_2005 = mean(year_after_2005)) %>% # fixed year
-  add_epred_draws(m_post, ndraws = 100, re_formula = NA) %>% # ignore random effects
-  ggplot(aes(x = log_teamsize, y = c_5, color= ordered(condition_fct))) +
-  geom_line(aes(y = .epred, group = paste(condition_fct, .draw)), alpha = 0.25) +
-  geom_point(data = d) + 
-  labs(title = "fitted draws (population estimate) for fixed year (mean) & ignore random effects") +
-  ylim(0, 300)
+d_year_min <- d %>%
+    group_by(condition_fct) %>%
+    data_grid(log_teamsize = min(log_teamsize), # sequence of values
+              year_after_2005 = seq_range(year_after_2005, 101)) %>% # fixed year
+    add_epred_draws(m_post, re_formula = NA) # no random eff. uncertainty
 
 ```
 
-
-Constant (mean) year & expectation from c5 mean study (random effects).
-
-```{r}
-
-# fitted means (draws for mean) and no re_formula (mean actor?)
-d %>%
-  group_by(condition_fct) %>%
-  data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
-            #id_match = id_match,
-            year_after_2005 = mean(year_after_2005)) %>% # fixed year (year = 2010)
-  add_epred_draws(m_post, re_formula = NA) %>% # ignore random effects
-  ggplot(aes(x = log_teamsize, y = c_5, color = ordered(condition_fct), fill = ordered(condition_fct))) +
-    #stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
-    #geom_line(aes(y = .epred, group = paste(condition_fct, .draw)), alpha = 0.25) +
-    geom_point(data = d) +
-    scale_fill_brewer(palette = "Set2") +
-    scale_color_brewer(palette = "Dark2") +
-  ylim(0, 400)
-
-```
-
-Constant (mean) year & expectation for c5 marginalized (random effects) study. 
+##### natural scale
 
 ```{r}
 
-# fitted means (marginalized)
-base_id = 2000
-levels <- nrow(d)/2
-max_id = base_id + levels - 1
-
-d %>%
-  group_by(condition_fct) %>%
-  data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
-            id_match = as_factor(rep(base_id:max_id, each = 2)),
-            year_after_2005 = mean(year_after_2005)) %>% # fixed year (mean = 2010). 
-  add_epred_draws(m_post, ndraws = 50, re_formula = NULL, allow_new_levels =TRUE) %>% # marginalize 
-  ggplot(aes(x = log_teamsize, y = c_5, color = ordered(condition_fct), fill = ordered(condition_fct))) +
-    stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
-    geom_point(data = d) +
-    scale_fill_brewer(palette = "Set2") +
-    scale_color_brewer(palette = "Dark2") +
-  ylim(0, 1000)
-
-```
-
-predict (not quite same as above, but on the same scale). 
-
-```{r}
-
-# predicted draws
-base_id = 2000
-levels <- nrow(d)/2
-max_id = base_id + levels - 1
-
-d %>%
-  group_by(condition_fct) %>%
-  data_grid(log_teamsize = seq_range(log_teamsize, n = 101),
-            id_match = as_factor(rep(base_id:max_id, each = 2)),
-            year_after_2005 = mean(year_after_2005)) %>% # fixed year (mean = 2010). 
-  add_predicted_draws(m_post, ndraws = 20, re_formula = NULL, allow_new_levels =TRUE) %>% # marginalize 
-  ggplot(aes(x = log_teamsize, y = c_5, color = ordered(condition_fct), fill = ordered(condition_fct))) +
-    stat_lineribbon(aes(y = .prediction), .width = c(.95, .80), alpha = 1/4) +
-    geom_point(data = d) +
-    scale_fill_brewer(palette = "Set2") +
-    scale_color_brewer(palette = "Dark2") +
-  ylim(0, 1000)
-
-```
-
-### YEAR 
-
-mean for mean study?
-
-```{r}
-
-# fitted means (draws for mean) and no re_formula (mean actor?)
-d %>%
-  group_by(condition_fct) %>%
-  data_grid(log_teamsize = mean(log_teamsize),
-            year_after_2005 = seq_range(year_after_2005, n = 101)) %>%
-  add_epred_draws(m_post, re_formula = NA) %>% # ignore random effects
-  ggplot(aes(x = year_after_2005, y = c_5, color = ordered(condition_fct), fill = ordered(condition_fct))) +
-    stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
-    #geom_point(data = d) +
-    scale_fill_brewer(palette = "Set2") +
-    scale_color_brewer(palette = "Dark2") +
-  ylim(0, 25)
-
-```
-
-```{r}
-
-# fitted means (marginalized)
-base_id = 2000
-levels <- nrow(d)/2
-max_id = base_id + levels - 1
-
-d %>%
-  group_by(condition_fct) %>%
-  data_grid(log_teamsize = mean(log_teamsize),
-            id_match = as_factor(rep(base_id:max_id, each = 2)),
-            year_after_2005 = seq_range(year_after_2005, 101)) %>% # fixed year (mean = 2010). 
-  add_epred_draws(m_post, ndraws = 50, re_formula = NULL, allow_new_levels =TRUE) %>% # marginalize 
-  ggplot(aes(x = year_after_2005, y = c_5, color = ordered(condition_fct), fill = ordered(condition_fct))) +
-    stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
-    #geom_point(data = d) +
-    scale_fill_brewer(palette = "Set2") +
-    scale_color_brewer(palette = "Dark2") +
-  ylim(0, 100)
-
-```
-
-
-```{r}
-
-## other varialbles at mean ##
-d %>% 
-  group_by(condition_fct) %>% 
-  data_grid(log_teamsize = mean(log_teamsize),
-            year_after_2005 = mean(year_after_2005)) %>%
-  add_epred_draws(m_post, ndraws = 100, re_formula = NA) %>% # ignore random effects
-  ggplot(aes(x = year_after_2005, y = c_5, color = ordered(condition_fct), fill = ordered(condition_fct))) +
-    #stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
-    #geom_point(data = d) +
-    scale_fill_brewer(palette = "Set2") +
-    scale_color_brewer(palette = "Dark2") +
-  ylim(0, 25)
-## other variables at min (intercept)
-
+plt_year <- function(draws, d, clrs, ylim){
   
+  p <- draws %>% ggplot(aes(x = year_after_2005, 
+                       y = c_5, 
+                       color = ordered(condition_fct), 
+                       fill = ordered(condition_fct))) +
+      #geom_jitter(data = d, alpha = 0.8) + 
+      stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
+      labs(title = "Average", #  "Expected Value (mean actor)",
+           x = "YEAR",
+           y = TeX("$c_5$")) +
+      theme(plot.title = element_text(hjust = 0.5, size = title),
+            axis.text = element_text(size = tick),
+            axis.title = element_text(size = label),
+            legend.text = element_text(size = tick),
+            legend.position = "bottom") +
+      scale_color_manual(
+        values = clrs,
+        guide = guide_legend(title = NULL)) +
+      scale_fill_manual(
+        values = clrs,
+        guide = guide_legend(title = NULL)) +
+      ylim(0, ylim) 
+  
+  return(p)
+}
+
 ```
 
+#### plot it 
 
+https://mjskay.github.io/tidybayes/reference/add_predicted_draws.html
+
+Fixing teamsize at minimum (solo-authored paper) and varying YEAR over a grid from 2005 (YEAR = 0) to 2015 (YEAR = 10).
+Draws from the expectation of the posterior predictive distribution (see link). 
+setting the group-level effects to their mean and only displaying the uncertainty for our population estimates. 
+Bold line indicates the mean, and CI-bands of 80% and 95% uncertainty intervals (credibility, confidence...). 
+
+```{r}
+
+ymax = max(d_year_min$.epred) 
+p_year <- plt_year(d_year_min, d, clrs, ymax)
+
+```
+
+##### marginalized 
+
+```{r}
+
+CI_year_marginalized <- function(d, clrs, xlim){
+  
+  # fitted means (marginalized)
+  base_id = 2000
+  levels <- nrow(d)/2
+  max_id = base_id + levels - 1
+  
+  draws <- d %>%
+    group_by(condition_fct) %>%
+    data_grid(year_after_2005 = seq_range(year_after_2005, n = 101),
+              id_match = as_factor(rep(base_id:max_id, each = 2)),
+              log_teamsize = min(log_teamsize)) %>% # fixed year
+    add_epred_draws(m_post, ndraws = 100, re_formula = NULL, allow_new_levels =TRUE) # marginalize 
+  
+  
+  draws_sub <- draws %>% filter(exp(year_after_2005) <= xlim)
+  ymax <- quantile(draws_sub$.epred, .999)
+  
+  p <- draws %>% ggplot(aes(x = year_after_2005, 
+               y = c_5, 
+               color = ordered(condition_fct), 
+               fill = ordered(condition_fct))) +
+    stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
+    labs(title = "Marginal", 
+         x = "YEAR",
+         y = TeX("$c_5$")) +
+    theme(plot.title = element_text(hjust = 0.5, size = title),
+          axis.text = element_text(size = tick),
+          axis.title = element_text(size = label),
+          legend.text = element_text(size = tick),
+          legend.position = "bottom") +
+    scale_color_manual(
+      values = clrs, 
+      guide = guide_legend(title = NULL)) +
+    scale_fill_manual(
+      values = clrs, 
+      guide = guide_legend(title = NULL)) +
+    ylim(0, ymax) +
+    xlim(0, xlim)
+  
+  return(p)
+    
+}
+```
+
+## plot marginalized
+Fixing teamsize at minimum (solo-authored paper) and varying YEAR over a grid from 2005 (YEAR = 0) to 2015 (YEAR = 10).
+Draws from the expectation of the posterior predictive distribution (see link). 
+Incorporating varying effects uncertainty, by simulating from the posterior standard deviation of group-level effects
+(marginalizing over random effects). Shows that there is a lot of uncertainty between levels (groups). 
+
+```{r}
+
+p_year_marginalized <- CI_year_marginalized(d, clrs, max(d$year_after_2005))
+
+```
+
+### GATHER IN FIG ###
+
+```{r}
+
+p_grid <- ggarrange(p_year,
+                    p_year_marginalized, 
+                    ncol = 2, 
+                    common.legend = TRUE, 
+                    legend = 'bottom',
+                    labels = c("A", "B"))
+
+
+```
+
+```{r}
+
+ggsave(filename = paste0(outpath, tag, "conditional_year.pdf"),
+       plot = p_grid,
+       width = 8,
+       height = 4)
+
+```
 

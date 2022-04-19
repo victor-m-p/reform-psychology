@@ -11,6 +11,9 @@ NB:
 NB: 
 # (1) uses some (modified) cleaning from CHCAA
 # (2) can become an issue with .csv for tweet_id (we want string ideally) -- for now no issues detected
+
+NB: 
+changed input file for now and hard-coded some stuff that we need to make nice. 
 '''
 
 # imports 
@@ -74,8 +77,10 @@ def clean_text(data, stopwords, TextFeatures):
         pd.DataFrame: Dataframe containing the necessary information.
     """    
 
-    column_names = ['tweet_id', 'username', 'clean_text', 'raw_text', 'tweet_date']
-    df_main = pd.DataFrame(columns = column_names)
+    #column_names = ['tweet_id', 'username', 'clean_text', 'clean_lemma', 'raw_text', 'tweet_date']
+    #df_main = pd.DataFrame(columns = column_names)
+
+    d = {}
 
     for index, row in tqdm(data.iterrows()): 
 
@@ -84,27 +89,26 @@ def clean_text(data, stopwords, TextFeatures):
         if isinstance(raw_text, str): 
             paper_instance = TextFeatures(raw_text, stopwords)
             clean_text = paper_instance.cleaned_text
-            clean_token = paper_instance.tokenized # just for now 
+            #clean_token = paper_instance.tokenized 
             clean_lemma = paper_instance.lemmatized 
         else: 
             clean_text = ''
             clean_lemma = ''
 
         # put into df
-        df_tmp = pd.DataFrame({
-            'tweet_id': [row["tweet_id"]], 
-            'username': [row["username"]],
-            'clean_text': [clean_text],
-            'clean_token': [clean_token],
-            'clean_lemma': [clean_lemma],
-            'raw_text': [raw_text],
-            'tweet_date': [row["tweet_date"]]
-            })
+        d[index] = {
+            'tweet_id': row["tweet_id"],
+            'username': row['username'],
+            'raw_text': raw_text,
+            'clean_text': clean_text, 
+            'clean_lemma': clean_lemma,
+            'tweet_data': row['tweet_date']
+        }
 
-        #print(df_tmp.head())
-        df_main = df_main.append(df_tmp, ignore_index=True)
+        #df_main = df_main.append(df_tmp, ignore_index=True) # this is a bottleneck for performance.
     
     #df_concat = pd.concat(df, axis = 0).reset_index(drop = True)
+    df_main = pd.DataFrame.from_dict(d, "index")
 
     return df_main
 
@@ -113,12 +117,12 @@ def main(infile, outpath):
     # print information
     print(f"--- starting: cleaning tweets ---")
 
-    # read data & get filename
+    # NB: if we need pickle format again then this is the right thing... 
     with open(f"{infile}", "rb") as f:
         dct = pickle.load(f)
-
     df = pd.DataFrame.from_dict(dct)
-    outname = re.search("preprocessed/(.*).pickle", infile)[1]
+    outname = re.search("subsets/(.*).pickle", infile)[1]
+    print(f"{outname}")
 
     # only original tweets & lang = en
     df_orig = df[df["type_tweet"] != "retweeted"]
@@ -135,9 +139,9 @@ def main(infile, outpath):
         })
 
     # prepare stop-words
-    nltk_stopwords = stopwords.words('english')
-    additional_stopwords = ["im", "dont", "also", "one", "see", "ive", "well", "thats", "cant", "not", "youre", "theyre" "didnt", "havent", "doesnt", "heres", "id", "whos", "shes", "hes", "use", "would", "could"] # ill, 
-    total_stopwords = nltk_stopwords + additional_stopwords 
+    total_stopwords = stopwords.words('english') 
+    #additional_stopwords = ["im", "dont", "also", "one", "see", "ive", "well", "thats", "cant", "not", "youre", "theyre" "didnt", "havent", "doesnt", "heres", "id", "whos", "shes", "hes", "use", "would", "could"] # still get not (needn't?) 
+    #total_stopwords = nltk_stopwords + additional_stopwords 
 
     # clean text data
     df_concat = clean_text(df_sub, total_stopwords, TextFeatures)

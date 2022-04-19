@@ -1,4 +1,4 @@
 Hypothesis,Estimate,Est.Error,CI.Lower,CI.Upper,Evid.Ratio,Post.Prob,Star
-(exp(condition_fctexperiment))-(exp(condition_fctcontrol)) < 0,-0.13427112947683714,1.4315540369464461,-2.464578427724831,2.1873723462040013,1.1609940572663424,0.53725,
-(exp(condition_fctexperiment:log_teamsize))-(exp(condition_fctcontrol:log_teamsize)) < 0,-0.8979261371274287,0.27822146629148997,-1.373033359848947,-0.45943539603758526,2665.6666666666665,0.999625,*
-(exp(condition_fctexperiment:year_after_2005))-(exp(condition_fctcontrol:year_after_2005)) > 0,0.1336511138769775,0.031022710205681772,0.0820970064892487,0.18362757414898007,Inf,1,*
+(exp(condition_fctexperiment))-(exp(condition_fctcontrol)) < 0,-0.18664008815236877,1.452302687155126,-2.5915944117416108,2.20576678705449,1.232765838682668,0.5521250000000001,
+(exp(condition_fctexperiment:log_teamsize))-(exp(condition_fctcontrol:log_teamsize)) < 0,-0.8932372811817799,0.2807061520084129,-1.3748099985164501,-0.4434288521131122,3999,0.99975,*
+(exp(condition_fctexperiment:year_after_2005))-(exp(condition_fctcontrol:year_after_2005)) > 0,0.13386642432945806,0.030946935463663373,0.0828562688762281,0.1850139387917366,Inf,1,*

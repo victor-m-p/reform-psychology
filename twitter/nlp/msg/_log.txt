@@ -1,0 +1,17 @@
+info: {'k': 15, 'alg': "<class 'nonnegfac.nmf.NMF'>", 'A_dim_1': 12351, 'A_dim_2': 2500, 'A_type': "<class 'scipy.sparse.csr.csr_matrix'>", 'max_iter': 100, 'verbose': 0, 'max_time': inf, 'init': 'uniform_random'}
+final: {'norm_A': 111.07204868912791, 'rel_error': 0.9632821522874506, 'iterations': 100, 'elapsed': 163.49616718292236}
+dimension-0: year,  thi,  firt,  ha,  million,  trillion,  2020,  yuan,  billion,  poverty,  lat,  people,  pat,  ourim,  month, 
+dimension-1: chinee,  culture,  vice,  cientit,  people,  viit,  tate,  meet,  fetival,  arrive,  tudent,  uk,  traditional,  companie,  leader, 
+dimension-2: cooperation,  chinaeu,  agree,  tie,  ambaador,  vow,  trengthen,  zhang,  deepen,  enhance,  promote,  boot,  relation,  bilateral,  ing, 
+dimension-3: beltandoad,  initiative,  train,  freight,  forum,  countrie,  development,  connectivity,  chinaeurope,  benefit,  project,  oad,  firt,  ay,  contruction, 
+dimension-4: covid19,  againt,  fight,  ha,  vaccine,  global,  countrie,  medical,  upport,  people,  aid,  coronaviru,  help,  epidemic,  effort, 
+dimension-5: trade,  economic,  invetment,  free,  growth,  economy,  foreign,  global,  eu,  boot,  billion,  agreement,  zone,  ervice,  market, 
+dimension-6: xi,  preident,  jinping,  viit,  peech,  xiukviit,  bics,  summit,  g20,  opening,  hi,  met,  text,  remark,  aid, 
+dimension-7: xijinping,  preident,  meet,  tie,  tree,  viit,  book,  congratulate,  cpc,  rump,  tate,  reform,  urge,  end,  arrive, 
+dimension-8: new,  atellite,  launche,  era,  cae,  province,  area,  development,  xiongan,  confirmed,  train,  airport,  plan,  otal,  launch, 
+dimension-9: world,  larget,  firt,  open,  economy,  shanghai,  ha,  internet,  heritage,  bridge,  build,  et,  longet,  peace,  highet, 
+dimension-10: beijing,  held,  pic,  open,  olympic,  day,  forum,  winter,  exhibition,  ceremony,  airport,  2022,  national,  international,  firt, 
+dimension-11: amp,  amb,  development,  peace,  intl,  work,  ecurity,  eu,  unsc,  upport,  tability,  today,  right,  effort,  hared, 
+dimension-12: wang,  yi,  foreign,  initer,  state,  councilor,  met,  meeting,  meet,  vice,  relation,  councillor,  ead,  miniter,  multilateralim, 
+dimension-13: conference,  pre,  scio,  10,  media,  held,  brief,  briefing,  notice,  council,  tuned,  tay,  pleae,  development,  information, 
+dimension-14: premier,  li,  keqiang,  viit,  meet,  vice,  innovation,  reform,  tree,  effort,  meeting,  buine,  met,  work,  germany, 

@@ -1,0 +1,30 @@
+This archive contains the code to performe the Noise-Corrected (NC) backboning on complex networks.
+
+It also contains the companion data for reproducing the results of the paper "Network Backboning with Noisy Data", by me and Frank Neffke, submitted to ICDE 2017.
+
+Content of the archive:
+- backboning.py: The Python module containing the implementation of the Noise-Corrected backbone, Disparity Filter, High Salience Skeleton, Doubly Stochastic Transformation, Maximum Spanning Tree and Naive Thresholding.  To use the module, simply place the backboning.py file in a directory in your Python path or in the directory where your scripts will run. Then, import it with "import backboning". The library requires Numpy, Pandas and Networkx installed. Assuming your network is stored as a field separated text file with at least three columns (origin, destination and weights), you can import it using backboning.read (more info in code comments). After importing, to extract the backbone you have to choose the preferred preprocessing method, e.g. backboning.noise_corrected. Finally, the backbone is returned when thesholding the preprocessed network, with backboning.thresholding.
+
+- country_networks.csv: The dataset containing the real world networks used in Section V of the paper. Tab separated. Business, Flight and Ownership networks are not included due to Data Usage Agreements preventing their sharing. Each column represent a network, either a yearly snapshot (if year is specified in the column name) or agreggated across yeas (if year is not specified in the column name).
+
+Figure folders:
+
+- fig3: Reproduces the toy example used for Figure 3. It outputs the edge list of the backbone.
+
+- fig4: Folder containing the code to reproduce the experiment on synthetic networks (figure 4 of the paper). Requires two command line parameters: the number of nodes in the synthetic network (used for the paper: 200) and the number of runs per noise threshold (used for the paper: 10). E.g., run: "python fig4_synthetic_experiment.py 200 10". Produces output "fig4_data". It is a tab separated column file. First column is the amount of noise, then each group of three columns is a different method (reporting average, lower and upper confidence interval). The method order is: noise_corrected, disparity_filter, naive, maximum_spanning_tree, doubly_stochastic, high_salience_skeleton. WARNING: high_salience_skeleton is very inefficient and will greatly increase running time. Comment it out for faster results. Also: doubly_stochastic tends to frequently fail. To generate the figure, use Gnuplot with the provided script in the folder.
+
+- fig6: Calculates the correlations between an edge weight and the average weight of its adjacent edges. To generate the figure, use Gnuplot with the provided script in the folder.
+
+- fig7-tab1: Calculate the correlations between observed and expected edge weight variance. The script prints to standard output the content of table 1. To generate the figure, use Gnuplot with the provided script in the folder.
+
+- fig8: Calculates the backbone coverage on the nodes of the network. Simply run "python fig8_nodes.py". To generate the figure, use Gnuplot with the provided script in the folder.
+
+- fig9: Calculates the backbone stability. To generate the figure, use Gnuplot with the provided script in the folder.
+
+- tab2: Calculates the backbone quality. Note that the trade network here is absent, because its quality calculation depends on the business travel network, which we cannot share. this script prints the equivalent of table 2.
+
+- sec6: The scripts necessary to reproduce the analyses of the case study. Run each script in order of their number. No script takes parameters. Script "04" is designed to run in a Unix shell (tested on the standard terminal of Ubuntu 15.10). "03" provides the correlations prediction occupation jumps. "04" provides in the corresponding .tree files the codelengths as result of the infomap community discovery algorithm. "05" provides the modularities of the 1 digit occupation classification as clusters of the backbones.
+
+- README: The file you are reading right now.
+
+If you have questions, comments, suggestions or bug reports, feel free to contact me at michele.coscia@gmail.com.

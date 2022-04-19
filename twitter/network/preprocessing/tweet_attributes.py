@@ -60,6 +60,7 @@ def main(infile, outpath):
 
     # print 
     print(f"--- finished: tweeet attributes ---")
+    
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--infile", required=True, type=str, help="path to input file (.pickle from ../../data/raw/preprocessed/file.pickle)")

@@ -12,7 +12,8 @@ import seaborn as sns
 pd.set_option('display.max_colwidth', None)
 
 # load data
-d = pd.read_csv("/work/50114/twitter/data/nlp/by_tweet/bropenscience_tweet_text.csv")
+d1 = pd.read_csv("/work/50114/twitter/data/nlp/by_tweet/replicationcrisis_tweet_text.csv")
+d2 = pd.read_csv("/work/50114/twitter/data/nlp/by_tweet/bropenscience_tweet_text.csv")
 
 ''' preparation '''
 # test get-type by e.g. year: 
@@ -26,7 +27,8 @@ def get_dates(d):
 
     return d
 
-d = get_dates(d)
+d1 = get_dates(d1)
+d2 = get_dates(d2)
 
 ''' unigrams '''
 # unigrams
@@ -85,14 +87,38 @@ def unigrams_over_time(d, period, type = "clean_lemma", n = None):
     return d_concat
 
 
-d_year = unigrams_over_time(d, "tweet_year", n = 10)
+
+
+## top words (check all)
+d1_top = get_top(d1, n = 20) # psychology + science at the top (replicate, replication) (psychology, psychologys)
+d2_top = get_top(d2, n = 20)
+
+## unigrams over time (fixed)
+d1_all = get_top(d1)
+d2_all = get_top(d2)
+
+value = 'nhst'
+nhst = d1_all[d1_all['word'].str.contains(value)]
+
+nhst # 31
+null['count'].sum() # 137
+pvalue['count'].sum() # 215
+replicat['count'].sum() # 32.738 (but, we conditioned...)
+method['count'].sum() # 1.137 (but also... method)
+statistics['count'].sum() # 6
+stats['count'].sum() # 33
+openscience['count'].sum() # 308
+replicab['count'].sum() # 353
+reproducib['count'].sum() # 795
+
+
 
 # try to plot this # 
-d_year["tweet_year"] = d_year["tweet_year"].dt.to_timestamp('y')
-d_year = d_year.reset_index() # should be done earlier 
+d1_year["tweet_year"] = d1_year["tweet_year"].dt.to_timestamp('y')
+d1_year = d1_year.reset_index() # should be done earlier 
 
 sns.lineplot(
-        data = d_year, 
+        data = d1_year, 
         x = "tweet_year", 
         y = "fraction",
         hue = "word")

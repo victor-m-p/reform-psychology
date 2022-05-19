@@ -15,6 +15,8 @@ import re
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from nonnegfac.nmf import NMF
+from sklearn.metrics import pairwise_distances
+import time 
 
 def display_topics(H, feature_names, no_top_words, filename="dimensions.txt"):
     """ display no_top_words number of words for each topic in a sklearn latent variable model
@@ -28,9 +30,8 @@ def display_topics(H, feature_names, no_top_words, filename="dimensions.txt"):
             fname.write(f"{s}\n")
 
 def main(inpath, outpath, textcol, k):
-
+    t0 = time.perf_counter()
     print(f"--- starting: msg decomposition ---")
-    
     data = pd.read_csv(inpath)
     data = data[~data[textcol].isnull()] # a few null values (which breaks it). 
     content_norm = data[textcol].values # the column?
@@ -49,23 +50,34 @@ def main(inpath, outpath, textcol, k):
         stop_words = swfilter
         )
 
+    # decomposition
+    print(f"--> main decomposition")
     X = vectorizer.fit_transform(content_norm)
     features = vectorizer.get_feature_names_out() # was get_feature_names() but deprecated
     print("[INFO] decomposing DT matrix...")
     np.random.seed(1234)
     W, H, info = NMF().run(X, k, max_iter = 100, verbose=0)
+
+    # logging topics
     outname = re.search("by_tweet/(.*).csv", inpath)[1]
-    logname = f'{outname}_log.txt'
+    logname = f'{outpath}{outname}_k{k}_log.txt'
     print(f"[INFO] wrting model log to {logname}")
     with open(logname, "w") as fname:
         for (key, value) in info.items():
             fname.write(f"{key}: {value}\n")
-    display_topics(H.T, features, k, filename=logname)    
-    outname = re.search("by_tweet/(.*).csv", inpath)[1]
-    outpath_total = f'{outpath}{outname}_k{k}_W.txt'
-    np.savetxt(outpath_total, W, fmt="%.5f")
-    print(f"[INFO] wrting W to {outpath_total}")
+    display_topics(H.T, features, k, filename=logname)   
 
+    # logging w  
+    np.savetxt(f'{outpath}{outname}_k{k}_W.txt', W, fmt="%.5f")
+    print(f"[INFO] wrting W to {outpath}")
+    t1 = time.perf_counter()
+    t_total = t1 - t0
+    print(f"time total: {round(t_total/60, 2)} minutes")
+    # nmf (pairwise)
+    #print(f"--> pairwise distance")
+    #D = pairwise_distances(W, metric = "cosine")
+    #np.savetxt(f'{outpath}{outname}_k{k}_D.txt', D, fmt="%.5f")
+    #print(f"[INFO] writing D to {outpath}")
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

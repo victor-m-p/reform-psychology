@@ -1,0 +1,2 @@
+Hypothesis,Estimate,Est.Error,CI.Lower,CI.Upper,Evid.Ratio,Post.Prob,Star
+(exp(condition_fctcontrol+condition_fctcontrol:log_teamsize*2.996)-exp(condition_fctcontrol+condition_fctcontrol:log_teamsize*1.609)) > 0,30.43194535608211,6.30217252382039,21.147638974186012,41.73825049848203,Inf,1,*

@@ -1,0 +1,442 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r, include=FALSE}
+
+# consider pacman
+if (!require("pacman")){
+  install.packages("pacman") # repos = "http://cran.r-project.org"
+}
+
+library(pacman)
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr, latex2exp, ggpubr)
+
+# set up cmdstanr if it is not already present
+if (!require('cmdstanr')){
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+}
+
+
+```
+
+# FOS 
+
+```{r, include=FALSE}
+
+inpath <- "/work/50114/MAG/data/modeling/"
+infile <- "psychology_replication_matched.csv"
+
+csv_path <- paste0(inpath, infile)
+
+# check data
+d_fos <- read_csv(csv_path) %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_fct = as_factor(condition), 
+         condition_fct = fct_relevel(condition_fct, c("experiment", "control")),
+         id_match = as_factor(match_group),
+         id_dct = as_factor(PaperId),
+         year_after_2005 = Year - 2005) 
+
+```
+
+
+```{r}
+
+inpath_post <- "/work/50114/MAG/modeling/models/replication_fos/main_model/m_post.rds"
+m_fos <- readRDS(paste0(inpath_post))
+
+```
+
+
+# EVIDENCE RATIO
+
+## mean values of YEAR and TEAMSIZE
+
+```{r}
+
+d_sum <- d_fos %>% summarize(mean_ts = mean(log_teamsize), # 0.9076
+                mean_ts_nat = exp(mean_ts), # 2.478
+                mean_y = mean(year_after_2005), # 6.244
+                mean_y_nat = mean_y + 2005) %>% # 2011.24
+  glimpse()
+
+# save
+write_csv(d_sum, paste0(outpath, "data_statistics.csv"))
+
+```
+
+```{r}
+
+d_fos
+
+```
+
+
+Our group-difference for the INTERCEPT parameter is the expected difference in citations between
+replication (experiment) and non-replication (control) studies for a solo-authored paper published
+in 2005. A better idea about which group of studies (replication, control) is more cited on average
+is obtained when comparing the expected citation difference for mean values of our predictors, 
+TEAMSIZE and YEAR. The mean TEAMSIZE in the R_{FOS} data set is 2.48 authors and the mean YEAR 
+in our data is 2011.24. When comparing the inferred parameters for replication and control studies
+with these values, the expected citation difference is significant (Est: $3.3$, CIs: $1.6, 5.07$, Evid.Ratio $> 1000$, Post.Prob = $1$). All posterior probability is consistent with replication (experiment) studies being cited more
+than non-replication (control) studies for mean values of TEAMSIZE and YEAR.
+
+```{r}
+
+d_means <- hypothesis(m_fos, glue("exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*0.908 + condition_fctexperiment:year_after_2005*{val}) - exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*0.908 + condition_fctcontrol:year_after_2005*6.24) > 0"), 
+alpha = 0.05)
+d_means # Est: 3.3 (1.6, 5.07), Evid.Ratio = 7999, Post.Prob = 1
+
+```
+
+```{r}
+
+q_cont <- hypothesis(m_fos, "exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*0.908 + condition_fctcontrol:year_after_2005*6.24) > 0", alpha = 0.05)
+q_cont # Est: 8.04 (6.89, 9.28)
+
+```
+
+```{r}
+
+q_cont <- hypothesis(m_fos, "exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*0.908 + condition_fctexperiment:year_after_2005*6.24) > 0", alpha = 0.05)
+q_cont # Est: 11.35 (9.79, 13.01)
+
+```
+
+We visualize data generated
+
+```{r}
+
+d_fos_mean <- d_fos %>%
+    group_by(condition_fct) %>%
+    data_grid(log_teamsize = mean(log_teamsize), # sequence of values
+              year_after_2005 = mean(year_after_2005)) %>% # fixed year
+    add_epred_draws(m_post, re_formula = NA) # no random eff. uncertainty
+
+```
+
+```{r}
+
+color_map <- c("experiment" = '#e6550d',
+               "control" = '#fdae6b')
+label = 14
+tick = 12
+
+d_fos_mean %>% ggplot(aes(.epred, condition_fct, fill = condition_fct)) + 
+  ggdist::stat_halfeye(point_color = NA, .width = 0, height = 1) +  
+  geom_boxplot(width = .1, outlier.shape = NA, position = position_nudge(y = -0.1), show.legend=FALSE) + 
+  scale_fill_manual(values = color_map,
+                    guide = guide_legend(title = NULL)) + 
+  scale_color_manual(values = color_map,
+                     guide = guide_legend(title = NULL)) + 
+  #xlim(0, 300) +
+  scale_y_discrete(expand = c(0.12, 0.12)) +
+  scale_x_continuous(limits = c(5, 15), expand = c(0.02, 0.02)) + 
+  labs(#title = TeX("Outcome Distribution ($c_5$)"),
+       y = "condition", 
+       x = TeX("$c_5$")) + 
+  theme(#plot.title = element_text(hjust = 0.5, size = title),
+        axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        legend.text = element_text(size = tick),
+        legend.position = "none",
+        #axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+```
+
+## predictors (YEAR)
+
+```{r}
+
+d_year <- hypothesis(m_fos, "(exp(condition_fctexperiment + condition_fctexperiment:year_after_2005*10) - 
+                         exp(condition_fctexperiment)) - (exp(condition_fctcontrol + condition_fctcontrol:year_after_2005*10) - exp(condition_fctcontrol)) > 0", alpha = 0.05)
+
+d_year # 8.42 (4.81, 12.5), Evid.Ratio: INF, Post.Prob = 1
+
+
+```
+
+```{r}
+
+d_year_exp <- hypothesis(m_fos, "exp(condition_fctexperiment + condition_fctexperiment:year_after_2005*10) - 
+                         exp(condition_fctexperiment) > 0", alpha = 0.05)
+d_year_exp # Est: 5.57 (2.46, 9.1), Evid.Ratio = 614, Post.Prob = 1.
+
+```
+
+```{r}
+
+d_cont_exp <- hypothesis(m_fos, "exp(condition_fctcontrol + condition_fctcontrol:year_after_2005*10) - 
+                         exp(condition_fctcontrol) > 0", alpha = 0.05)
+d_cont_exp # Est: -2.85 (-4.76, -1.19), Evid.Ratio: 0, Post.Prob = 0. 
+
+```
+
+```{r}
+
+conditions <- data.frame(log_teamsize = 0)
+plot(conditional_effects(m_fos, effects = "year_after_2005:condition_fct", conditions = conditions))
+
+```
+
+## plot 
+
+```{r}
+
+```
+
+
+## predictors (TEAMSIZE)
+
+```{r}
+log(2) # 0.693
+log(5) # 1.609
+log(20) # 2.996
+```
+
+
+```{r}
+
+d_team_one_e <- hypothesis(m_fos, "exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609) - 
+                         exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*0.693) > 0", alpha = 0.05)
+d_team_one_e # Est: 2.23 (0.92, 3.84), Evid = 1599, Post.Prob = 1
+
+```
+
+```{r}
+
+d_team_two_e <- hypothesis(m_fos, "exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*2.996) - 
+                         exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609) > 0", alpha = 0.05)
+d_team_two_e # Est: 5.03 (1.65, 9.85), Evid = 1599, Post.Prob = 1
+
+```
+
+```{r}
+
+d_team_one_c <- hypothesis(m_fos, "exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*0.693) > 0", alpha = 0.05)
+d_team_one_c # Est: 11.22 (7.43, 15.83), Evid.Ratio=Inf, Post.Prob=1
+
+```
+
+```{r}
+
+d_team_two_c <- hypothesis(m_fos, "exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*2.996) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609) > 0", alpha = 0.05)
+d_team_two_c # Est: 45.59 (24.4, 75.24), Evid.Ratio=Inf, Post.Prob=1
+
+
+```
+
+```{r}
+d_team_cont_1 <- hypothesis(m_fos, "(exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*0.693)) - (exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609) - exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*0.693)) > 0", alpha = 0.05)
+d_team_cont_1 # Est: 8.99 (4.89, 13.69), Evid: INF, post.prob = 1
+
+```
+
+
+```{r}
+d_team_cont_2 <- hypothesis(m_fos, "(exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*2.996) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609)) - (exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*2.996) - exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609)) > 0", alpha = 0.05)
+d_team_cont_2 # Est: 40.56 (18.78, 70.23), Evid.Ratio = INF, Post.Prob = 1 
+```
+
+
+# Q query (robustness)
+
+We compare the expected citation difference for mean values of our predictors (TEAMSIZE, YEAR) for 
+R_{QUERY} as a robustness check. Recall that for the $R_{FOS}$ model the expected number of citations
+was significantly higher for replication studies as compared to matched controls. This result is 
+replicated for the model conditioned on $R_{QUERY}$ data, and the effect is found the difference is
+found to be even larger (Est: $4.58$, CIs: $3.25, 5.93$, Evid.Ratio: $> 1000$, Post.Prob = $1$). In this 
+model, replication studies are expected to receive $4.58$ citations more than non-replication studies for
+mean values of our predictors (YEAR, TEAMSIZE). The mean values in this case are slightly different, as they
+are based on a different data set, and mean TEAMSIZE is slightly higher (3.15) while YEAR is slightly lower 
+(2010.77). Overall the expected number of citations is larger for each group in the data as compared to 
+in the $R_{FOS}$ model. For the control group the expected $c_5$ is $9.66 (8.69, 10.68)$ while for the experiment group (replications) the expected $c_5$ is $14.24 (13.05, 15.48)$. The heterogeneity
+between the two data sets and the consistency of the overall effect that replication studies are cited more
+than non-replication studies suggests that this is a robust finding. 
+
+```{r}
+
+inpath_post <- "/work/50114/MAG/modeling/models/replication_keyword/main_model/m_post.rds"
+q_post <- readRDS(paste0(inpath_post))
+
+```
+
+```{r}
+
+inpath <- "/work/50114/MAG/data/modeling/"
+infile <- "psychology_replicat_matched.csv"
+
+csv_path <- paste0(inpath, infile)
+
+# check data
+q <- read_csv(csv_path) %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_fct = as_factor(condition), 
+         condition_fct = fct_relevel(condition_fct, c("experiment", "control")),
+         id_match = as_factor(match_group),
+         id_dct = as_factor(PaperId),
+         year_after_2005 = Year - 2005) 
+
+```
+
+
+```{r}
+
+q %>% summarize(mean_ts = mean(log_teamsize), # 1.148 
+                mean_ts_nat = exp(mean_ts), # 3.15 
+                mean_y = mean(year_after_2005), # 5.77 
+                mean_y_nat = mean_y + 2005) %>% # 2010.77 
+  glimpse()
+
+```
+
+```{r}
+
+q_means <- hypothesis(q_post, "exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.148 + condition_fctexperiment:year_after_2005*5.77) - exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.148 + condition_fctcontrol:year_after_2005*5.77) > 0", 
+alpha = 0.05)
+q_means # Est: 4.58 (3.25, 5.93) Evid = inf, Post.Prob = 1. 
+
+```
+
+```{r}
+
+q_cont <- hypothesis(q_post, "exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.148 + condition_fctcontrol:year_after_2005*5.77) > 0", alpha = 0.05)
+q_cont # Est: 9.66 (8.69, 10.68)
+
+```
+
+```{r}
+
+q_exp <- hypothesis(q_post, "exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.148 + condition_fctexperiment:year_after_2005*5.77) > 0")
+q_exp # 14.24 (13.05, 15.48)
+
+```
+
+```{r}
+
+q_overall <- q %>%
+    group_by(condition_fct) %>%
+    data_grid(log_teamsize = mean(log_teamsize), # sequence of values
+              year_after_2005 = mean(year_after_2005)) %>% # fixed year
+    add_epred_draws(m_post, re_formula = NA) # no random eff. uncertainty
+
+```
+
+```{r}
+q_overall %>% ggplot(aes(.epred, condition_fct, fill = condition_fct)) + 
+  ggdist::stat_halfeye(point_color = NA, .width = 0, height = 1) +  
+  geom_boxplot(width = .1, outlier.shape = NA, position = position_nudge(y = -0.1), show.legend=FALSE) + 
+  scale_fill_manual(values = color_map,
+                    guide = guide_legend(title = NULL)) + 
+  scale_color_manual(values = color_map,
+                     guide = guide_legend(title = NULL)) + 
+  #xlim(0, 300) +
+  scale_y_discrete(expand = c(0.12, 0.12)) +
+  scale_x_continuous(limits = c(5, 20), expand = c(0.02, 0.02)) + 
+  labs(#title = TeX("Outcome Distribution ($c_5$)"),
+       y = "condition", 
+       x = TeX("$c_5$")) + 
+  theme(#plot.title = element_text(hjust = 0.5, size = title),
+        axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        legend.text = element_text(size = tick),
+        legend.position = "none",
+        #axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+```
+
+## predictors (YEAR)
+
+```{r}
+
+d_year <- hypothesis(q_post, "(exp(condition_fctexperiment + condition_fctexperiment:year_after_2005*10) - 
+                         exp(condition_fctexperiment)) - (exp(condition_fctcontrol + condition_fctcontrol:year_after_2005*10) - exp(condition_fctcontrol)) > 0", alpha = 0.05)
+
+d_year # 0 (-1.96, 1.9), Post.Prob = 0.5
+
+
+```
+
+```{r}
+
+d_year_exp <- hypothesis(q_post, "exp(condition_fctexperiment + condition_fctexperiment:year_after_2005*10) - 
+                         exp(condition_fctexperiment) < 0", alpha = 0.05)
+d_year_exp # Est: -1.23 (-3.02, 0.3), Post.Prob = 0.91
+
+```
+
+```{r}
+
+d_cont_exp <- hypothesis(q_post, "exp(condition_fctcontrol + condition_fctcontrol:year_after_2005*10) - 
+                         exp(condition_fctcontrol) < 0", alpha = 0.05)
+d_cont_exp # Est: -1.32 (-2.39, -0.32), Post.Prob = 0.99
+
+```
+
+## predictors (TEAMSIZE)
+
+```{r}
+log(2) # 0.693
+log(5) # 1.609
+log(20) # 2.996
+```
+
+
+```{r}
+
+d_team_one_e <- hypothesis(q_post, "exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609) - 
+                         exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*0.693) > 0", alpha = 0.05)
+d_team_one_e # Est: 9.35 (7.34, 11.57), Evid = INF, Post.Prob = 1
+
+```
+
+```{r}
+
+d_team_two_e <- hypothesis(q_post, "exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*2.996) - 
+                         exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609) > 0", alpha = 0.05)
+d_team_two_e # Est: 30.14 (21.07, 40.79), Evid = INF, Post.Prob = 1
+
+```
+
+```{r}
+
+d_team_one_c <- hypothesis(q_post, "exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*0.693) > 0", alpha = 0.05)
+d_team_one_c # Est: 8.15 (6.47, 10.04), Evid.Ratio=Inf, Post.Prob=1
+
+```
+
+```{r}
+
+d_team_two_c <- hypothesis(q_post, "exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*2.996) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609) > 0", alpha = 0.05)
+d_team_two_c # Est: 30.43 (21.15, 41.74), Evid.Ratio=Inf, Post.Prob=1
+
+
+```
+
+```{r}
+d_team_cont_1 <- hypothesis(q_post, "(exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609) - 
+                         exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*0.693)) - (exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609) - exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*0.693)) > 0", alpha = 0.05)
+d_team_cont_1 # Est: 8.99 (4.89, 13.69), Evid: INF, post.prob = 1 (higher REPLICATION)
+
+```
+
+
+```{r}
+d_team_cont_2 <- hypothesis(q_post, "(exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*2.996) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609)) - (exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*2.996) - exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609)) > 0", alpha = 0.05)
+d_team_cont_2 # Est: 40.56 (18.78, 70.23), Evid.Ratio = INF, Post.Prob = 1 (HIGHER CONTROL)
+```

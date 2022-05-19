@@ -194,7 +194,7 @@ p_grid <- ggarrange(p_intercept,
 ggsave(filename = paste0(outpath, tag, "hyp.pdf"),
        plot = p_grid,
        width = 8,
-       height = 11)
+       height = 7.5)
 
 
 #' 
@@ -325,7 +325,7 @@ p_grid_outcome <- ggarrange(p_intercept_outcome,
 ggsave(filename = paste0(outpath, tag, "hyp_outcome.pdf"),
        plot = p_grid_outcome,
        width = 8,
-       height = 11)
+       height = 7.5)
 
 
 #' 

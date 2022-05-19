@@ -1,0 +1,94 @@
+--running replication matched
+Loading required package: pacman
+Loading required package: cmdstanr
+This is cmdstanr version 0.5.2
+- CmdStanR documentation and vignettes: mc-stan.org/cmdstanr
+- CmdStan path: /home/ucloud/.cmdstan/cmdstan-2.29.2
+- CmdStan version: 2.29.2
+Warning message:
+package ‘cmdstanr’ was built under R version 4.3.0 
+Rows: 1240 Columns: 11
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (4): condition, DocType, NormalizedNameSub, PaperTitle
+dbl (7): match_group, FamilyId, n_authors, PaperId, Year, days_after_2005, c_5
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+# A tibble: 2 × 2
+  condition_fct mean_pred
+  <fct>             <dbl>
+1 experiment         16.8
+2 control            12.4
+
+Attaching package: ‘scales’
+
+The following object is masked from ‘package:purrr’:
+
+    discard
+
+The following object is masked from ‘package:readr’:
+
+    col_factor
+
+`summarise()` has grouped output by 'condition_fct'. You can override using the `.groups` argument.
+Warning messages:
+1: Removed 3 rows containing missing values (stat_slabinterval). 
+2: Removed 3 rows containing non-finite values (stat_boxplot). 
+3: Removed 3 rows containing missing values (stat_slabinterval). 
+4: Removed 3 rows containing non-finite values (stat_boxplot). 
+5: Transformation introduced infinite values in continuous x-axis 
+6: Transformation introduced infinite values in continuous x-axis 
+7: In is.na(x) :
+  is.na() applied to non-(list or vector) of type 'expression'
+8: In is.na(x) :
+  is.na() applied to non-(list or vector) of type 'expression'
+9: In is.na(x) :
+  is.na() applied to non-(list or vector) of type 'expression'
+Warning message:
+Removed 108 rows containing missing values (stat_slabinterval). 
+-- running results.R (replication keyword) --
+Loading required package: pacman
+Loading required package: cmdstanr
+This is cmdstanr version 0.5.2
+- CmdStanR documentation and vignettes: mc-stan.org/cmdstanr
+- CmdStan path: /home/ucloud/.cmdstan/cmdstan-2.29.2
+- CmdStan version: 2.29.2
+Warning message:
+package ‘cmdstanr’ was built under R version 4.3.0 
+Rows: 2392 Columns: 9
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (3): condition, DocType, PaperTitle
+dbl (6): match_group, n_authors, PaperId, Year, days_after_2005, c_5
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+# A tibble: 2 × 2
+  condition_fct mean_pred
+  <fct>             <dbl>
+1 experiment         21.7
+2 control            15.0
+
+Attaching package: ‘scales’
+
+The following object is masked from ‘package:purrr’:
+
+    discard
+
+The following object is masked from ‘package:readr’:
+
+    col_factor
+
+`summarise()` has grouped output by 'condition_fct'. You can override using the `.groups` argument.
+Warning messages:
+1: Transformation introduced infinite values in continuous x-axis 
+2: Transformation introduced infinite values in continuous x-axis 
+3: In is.na(x) :
+  is.na() applied to non-(list or vector) of type 'expression'
+4: In is.na(x) :
+  is.na() applied to non-(list or vector) of type 'expression'
+5: In is.na(x) :
+  is.na() applied to non-(list or vector) of type 'expression'
+Warning message:
+Removed 108 rows containing missing values (stat_slabinterval). 

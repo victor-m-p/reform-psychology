@@ -284,7 +284,7 @@ plot_combo <- function(m_post, filename, tick_size, label_size, height = 11, wid
   
   ggsave(filename = filename, 
          plot = p,
-         height = 11,
+         height = 8,
          width = 8)
   
 }

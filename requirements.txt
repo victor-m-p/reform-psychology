@@ -27,6 +27,7 @@ pytesseract
 opencv-python
 requests
 requests-oauthlib
+igraph
 twarc
 pycountry
 gender-guesser

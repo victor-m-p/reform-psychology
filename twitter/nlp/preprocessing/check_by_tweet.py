@@ -6,9 +6,15 @@ check the preprocessing
 # imports
 import pandas as pd 
 import numpy as np 
+import pickle
 
-# paths 
-path = "/work/50114/twitter/data/nlp/by_tweet/openscience_replicationcrisis_intersection_tweet_text.csv"
+# read stuff
+infile = "/work/50114/twitter/data/nlp/subsets/os_rc_5.pickle"
+with open(f"{infile}", "rb") as f:
+    dct = pickle.load(f)
+df = pd.DataFrame.from_dict(dct)
 
-# import 
-d = pd.read_csv(f"{path}")
+# check it 
+len(df) # 118932 rows 
+len(df['main_author_name'].unique()) # 989 unique accounts -- this is what we should backbone
+

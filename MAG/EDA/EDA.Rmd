@@ -367,17 +367,5 @@ write_csv(d_summary, paste0(outpath, filename, "d_summary.csv"))
 
 ```
 
-#### test it out for QUERY ####
-
-```{r}
-
-d_zero
-
-```
-
-```{r}
-d_stats
-```
-
 
 

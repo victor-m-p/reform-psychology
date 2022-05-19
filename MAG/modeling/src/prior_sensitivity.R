@@ -249,7 +249,7 @@ p_intercept <- int_data %>% ggplot(aes(x = priSD, y = int_ci_est, color = condit
   ylim(y_min, y_max) +
   labs(x = "", 
        y = TeX("Group difference ($\\mu$)"), 
-       title = "Intercept") + 
+       title = "INTERCEPT") + 
   scale_color_manual(
     breaks = c("Prior (main model)", "Prior (sensitivity)"),
     values = c(dark_color, light_color),

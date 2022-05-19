@@ -1,9 +1,9 @@
 condition_fct,count,percent_of_total,percent_of_above,type
-experiment,3987398,80.39,51.22,above_0
-control,3797734,76.57,48.78,above_0
-experiment,1734239,34.96,55.69,above_10
-control,1379590,27.81,44.31,above_10
-experiment,134699,2.72,63.75,above_100
-control,76583,1.54,36.25,above_100
-experiment,545,0.01,46.66,above_1000
-control,623,0.01,53.34,above_1000
+experiment,3988454,80.41,51.24,above_0
+control,3796008,76.53,48.76,above_0
+experiment,1735743,34.99,55.73,above_10
+control,1378660,27.8,44.27,above_10
+experiment,134820,2.72,63.73,above_100
+control,76741,1.55,36.27,above_100
+experiment,510,0.01,44.97,above_1000
+control,624,0.01,55.03,above_1000

@@ -401,7 +401,7 @@ p_grid <- plot_grid(prior_dens,
 
 ggsave(filename = paste0(outpath, tag, "pp_ungrouped.pdf"),
        plot = p_grid,
-       height = 8.5,
+       height = 7, # changed
        width = 8)
 
 

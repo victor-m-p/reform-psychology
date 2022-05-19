@@ -1,0 +1,510 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r, include=FALSE}
+
+# consider pacman
+if (!require("pacman")){
+  install.packages("pacman") # repos = "http://cran.r-project.org"
+}
+
+library(pacman)
+p_load(tidyverse, brms, ggthemes, bayesplot, cowplot, tidybayes, modelr, latex2exp, ggpubr)
+
+# set up cmdstanr if it is not already present
+if (!require('cmdstanr')){
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+library(cmdstanr)
+install_cmdstan(cores = 2, overwrite = TRUE)
+}
+
+
+```
+
+```{r}
+
+color_scheme_set("orange")
+theme_set(theme_classic())
+
+theme_set(theme_classic())
+title = 18
+label = 14
+tick = 12 # same as legend
+
+color_map <- c("Control" = '#1b9e77', 
+               "Experiment" = '#d95f02')
+
+categories <- c("Control",
+                "Experiment")
+
+clrs = c("#d95f02", "#1b9e77") # a bit hacky.
+
+```
+
+# FOS 
+
+```{r, include=FALSE}
+
+inpath <- "/work/50114/MAG/data/modeling/"
+infile <- "psychology_replicat_matched.csv"
+outpath <- "/work/50114/MAG/fig/modeling/replication_keyword/results/"
+inpath_post <- "/work/50114/MAG/modeling/models/replication_fos/main_model/m_post.rds"
+csv_path <- paste0(inpath, infile)
+
+# check data
+d_fos <- read_csv(csv_path) %>%
+  mutate(log_teamsize = log(n_authors), 
+         condition_fct = as_factor(condition), 
+         condition_fct = fct_relevel(condition_fct, c("experiment", "control")),
+         id_match = as_factor(match_group),
+         id_dct = as_factor(PaperId),
+         year_after_2005 = Year - 2005) 
+
+```
+
+
+```{r}
+
+m_fos <- readRDS(paste0(inpath_post))
+
+```
+
+
+# EVIDENCE RATIO
+
+## mean values of YEAR and TEAMSIZE
+
+```{r}
+
+d_sum <- d_fos %>% summarize(mean_team_log = mean(log_teamsize), # 0.9076
+                             mean_team_nat = exp(mean_team_log), # 2.478
+                             mean_year = mean(year_after_2005), # 6.244
+                             mean_year_nat = mean_year + 2005) # 2011.24
+
+# save
+write_csv(d_sum, paste0(outpath, "data_statistics.csv"))
+
+```
+## get values out 
+
+```{r}
+
+mean_team_log <- d_sum$mean_team_log
+mean_year <- d_sum$mean_year
+
+```
+
+
+Our group-difference for the INTERCEPT parameter is the expected difference in citations between
+replication (experiment) and non-replication (control) studies for a solo-authored paper published
+in 2005. A better idea about which group of studies (replication, control) is more cited on average
+is obtained when comparing the expected citation difference for mean values of our predictors, 
+TEAMSIZE and YEAR. The mean TEAMSIZE in the R_{FOS} data set is 2.48 authors and the mean YEAR 
+in our data is 2011.24. When comparing the inferred parameters for replication and control studies
+with these values, the expected citation difference is significant (Est: $3.3$, CIs: $1.6, 5.07$, Evid.Ratio $> 1000$, Post.Prob = $1$). All posterior probability is consistent with replication (experiment) studies being cited more
+than non-replication (control) studies for mean values of TEAMSIZE and YEAR.
+
+```{r}
+
+# run hypothesis
+d_means_int <- hypothesis(m_fos, glue("exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*{mean_team_log} + condition_fctexperiment:year_after_2005*{mean_year}) - exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*{mean_team_log} + condition_fctcontrol:year_after_2005*{mean_year}) > 0"), 
+alpha = 0.05)
+
+# gather dataframe 
+d_means_int_csv <- d_means_int$hypothesis
+write_csv(d_means_int_csv, paste0(outpath, "intercept_mean_values_interaction.csv"))
+
+```
+
+```{r}
+
+# run hypothesis
+d_means_control <- hypothesis(m_fos, glue("exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*{mean_team_log} + condition_fctcontrol:year_after_2005*{mean_year}) > 0"), alpha = 0.05)
+
+# gather dataframe
+d_means_control_csv <- d_means_control$hypothesis
+write_csv(d_means_control_csv, paste0(outpath, "intercept_mean_values_control.csv"))
+
+```
+
+```{r}
+
+# run hypothesis 
+d_means_exp <- hypothesis(m_fos, glue("exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*{mean_team_log} + condition_fctexperiment:year_after_2005*{mean_year}) > 0"), alpha = 0.05)
+
+d_means_exp_csv <- d_means_exp$hypothesis
+write_csv(d_means_exp_csv, paste0(outpath, "intercept_mean_values_experiment.csv"))
+
+```
+
+# Visualize 
+
+## distribution
+
+```{r}
+
+d_fos_mean <- d_fos %>%
+    group_by(condition_fct) %>%
+    data_grid(log_teamsize = mean(log_teamsize), # sequence of values
+              year_after_2005 = mean(year_after_2005)) %>% # fixed year
+    add_epred_draws(m_fos, re_formula = NA) # no random eff. uncertainty
+
+```
+
+```{r}
+
+x_min = 5
+if (grepl("fos", outpath, fixed = TRUE)) { # if it is FOS
+  x_max = 15
+} else {
+  x_max = 20 # if it is QUERY
+}
+
+```
+
+```{r}
+
+p_dist <- d_fos_mean %>% ggplot(aes(.epred, condition_fct, fill = condition_fct)) + 
+  ggdist::stat_halfeye(point_color = NA, .width = 0, height = 1) +  
+  geom_boxplot(width = .1, outlier.shape = NA, position = position_nudge(y = -0.1), show.legend=FALSE) + 
+
+  #xlim(0, 300) +
+  scale_y_discrete(expand = c(0.12, 0.12)) +
+  scale_x_continuous(limits = c(x_min, x_max), expand = c(0.02, 0.02)) + 
+  labs(#title = TeX("Outcome Distribution ($c_5$)"),
+       y = "Density", 
+       x = TeX("$c_5$")) + 
+    scale_fill_manual(values = clrs,
+                      guide = guide_legend(title = NULL)) + 
+  scale_color_manual(values = clrs,
+                     guide = guide_legend(title = NULL)) +
+  theme(#plot.title = element_text(hjust = 0.5, size = title),
+        axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        legend.text = element_text(size = tick),
+        legend.position = "none",
+        #axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+```
+
+## predictions
+
+```{r}
+
+base_id = 2000
+levels <- nrow(d_fos)/2
+max_id = base_id + levels - 1
+
+d_pred <- d_fos %>% dplyr::select(condition_fct, log_teamsize, year_after_2005) %>%
+  mutate(id_match = as_factor(rep(base_id:max_id, each = 2))) %>% # new ids 
+  add_predicted_draws(m_fos, allow_new_levels = T) # no cutoff
+
+```
+
+
+```{r}
+d_pred %>% group_by(condition_fct) %>% 
+  summarize(mean_pred = mean(.prediction))
+```
+
+
+```{r}
+
+library(scales) # to access break formatting functions
+
+text_y = 500000
+# adding very small number to avoid log(0). 
+p_pred <- d_pred %>% group_by(condition_fct, .prediction) %>% 
+  # prepare
+  summarize(count = n()) %>%
+  mutate(prediction = .prediction,
+         N = count) %>% 
+  # plot 
+  ggplot(aes(x = prediction, y = N)) + #, color = condition_fct)) + 
+  geom_freqpoly(data = . %>% filter(condition_fct == "control"), 
+                stat = 'identity',
+                aes(color = categories[1])) + 
+  geom_freqpoly(data = . %>% filter(condition_fct == "experiment"), 
+                stat = 'identity',
+                aes(color = categories[2])) + 
+  geom_vline(xintercept = 10) + 
+  geom_vline(xintercept = 100) +
+  geom_vline(xintercept = 1000) +
+  annotate("text", x = 15, y = text_y, label = TeX("$c_5 = 10$"), size = 4) + 
+  annotate("text", x = 160, y = text_y, label = TeX("$c_5 = 100$"), size = 4) + 
+  annotate("text", x = 1700, y = text_y, label = TeX("$c_5 = 1000$"), size = 4) + 
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  labs(title = "", # "Model Simulated Data",
+       x = TeX("$c_5$"),
+       y = "N") +
+  scale_color_manual(
+      breaks = categories, 
+      values = color_map,
+      guide = guide_legend(title = NULL)) +
+  theme(plot.title = element_text(hjust = 0.5, size = title),
+        axis.text = element_text(size = tick),
+        axis.title = element_text(size = label),
+        legend.text = element_text(size = tick),
+        legend.position = "bottom") 
+
+```
+
+## gather plots 
+
+```{r}
+
+p_grid <- ggarrange(p_dist, p_pred, ncol = 1, labels = c("A", "B"), common.legend = TRUE, legend = 'bottom')
+
+ggsave(filename = paste0(outpath, "main_intercept_predict.pdf"),
+       plot = p_grid,
+       width = 8,
+       height = 7)
+
+```
+
+## predictors (YEAR)
+
+```{r}
+
+# run hypothesis
+d_year_int <- hypothesis(m_fos, "(exp(condition_fctexperiment + condition_fctexperiment:year_after_2005*10) - 
+                         exp(condition_fctexperiment)) - (exp(condition_fctcontrol + condition_fctcontrol:year_after_2005*10) - exp(condition_fctcontrol)) > 0", alpha = 0.05)
+
+# gather results
+d_year_int <- d_year_int$hypothesis
+write_csv(d_year_int, paste0(outpath, "year_10_interaction.csv"))
+
+
+
+```
+
+```{r}
+
+# run hypothesis
+d_year_exp <- hypothesis(m_fos, "exp(condition_fctexperiment + condition_fctexperiment:year_after_2005*10) - 
+                         exp(condition_fctexperiment) > 0", alpha = 0.05)
+
+# gather results
+d_year_exp <- d_year_exp$hypothesis
+write_csv(d_year_exp, paste0(outpath, "year_10_experiment.csv"))
+
+
+```
+
+```{r}
+
+# run hypothesis
+d_year_cont <- hypothesis(m_fos, "exp(condition_fctcontrol + condition_fctcontrol:year_after_2005*10) - 
+                         exp(condition_fctcontrol) > 0", alpha = 0.05)
+
+# gather results 
+d_year_cont <- d_year_cont$hypothesis
+write_csv(d_year_cont, paste0(outpath, "year_10_control.csv"))
+
+
+```
+
+
+## plot 
+
+```{r}
+
+d_team_mean <- d_fos %>%
+    group_by(condition_fct) %>%
+    data_grid(log_teamsize = seq_range(log_teamsize, n = 101), # sequence of values
+              year_after_2005 = mean_year) %>% # fixed year
+    add_epred_draws(m_fos, re_formula = NA) # no random eff. uncertainty
+
+```
+
+
+```{r}
+
+plt_team_nat <- function(draws, d, clrs, xlim, ylim){
+  
+  p <- draws %>% ggplot(aes(x = exp(log_teamsize), 
+                       y = c_5, 
+                       color = ordered(condition_fct), 
+                       fill = ordered(condition_fct))) +
+    #geom_jitter(data = d, alpha = 0.1) + 
+    stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
+    labs(title = "", #  "Expected Value (mean actor)",
+         x = "TEAMSIZE",
+         y = TeX("$c_5$")) +
+    theme(plot.title = element_text(hjust = 0.5, size = title),
+          axis.text = element_text(size = tick),
+          axis.title = element_text(size = label),
+          legend.text = element_text(size = tick),
+          legend.position = "bottom") +
+    scale_color_manual(
+      values = clrs,
+      guide = guide_legend(title = NULL)) +
+    scale_fill_manual(
+      values = clrs,
+      guide = guide_legend(title = NULL)) +
+    ylim(0, ylim) +
+    xlim(0, xlim)
+  
+  return(p)
+  
+}
+
+d_team_sub <- d_team_mean %>% filter(log_teamsize <= log(20))
+y_max = quantile(d_team_sub$.epred, .9999)
+p_team_sub <- plt_team_nat(d_team_sub, d_fos, clrs, 20, y_max)
+
+```
+
+```{r}
+
+d_year_mean <- d_fos %>%
+    group_by(condition_fct) %>%
+    data_grid(log_teamsize = mean_team_log, # sequence of values
+              year_after_2005 = seq_range(year_after_2005, n = 101)) %>% # fixed year
+    add_epred_draws(m_fos, re_formula = NA) # no random eff. uncertainty
+
+```
+
+
+```{r}
+
+plt_year <- function(draws, d, clrs, ylim){
+  
+  p <- draws %>% mutate(actual_year = year_after_2005 + 2005) %>%
+    ggplot(aes(x = actual_year, 
+                       y = c_5, 
+                       color = ordered(condition_fct), 
+                       fill = ordered(condition_fct))) +
+      #geom_jitter(data = d, alpha = 0.8) + 
+      stat_lineribbon(aes(y = .epred), .width = c(.95, .80), alpha = 1/4) +
+      labs(title = "", #  "Expected Value (mean actor)",
+           x = "YEAR",
+           y = TeX("$c_5$")) +
+      theme(plot.title = element_text(hjust = 0.5, size = title),
+            axis.text = element_text(size = tick),
+            axis.title = element_text(size = label),
+            legend.text = element_text(size = tick),
+            legend.position = "bottom") +
+      scale_color_manual(
+        values = clrs,
+        guide = guide_legend(title = NULL)) +
+      scale_fill_manual(
+        values = clrs,
+        guide = guide_legend(title = NULL)) +
+    scale_x_continuous(limits = c(2005, 2015), breaks = c(2005, 2007, 2009, 2011, 2013, 2015)) +
+      ylim(0, ylim) 
+  
+  return(p)
+}
+
+ymax = max(d_year_mean$.epred) 
+p_year <- plt_year(d_year_mean, d, clrs, ymax)
+
+```
+
+
+
+### gather plots
+
+```{r}
+
+p_grid <- ggarrange(p_year, p_team_sub, ncol = 2, labels = c("A", "B"), common.legend = TRUE, legend = 'bottom')
+
+ggsave(filename = paste0(outpath, "main_interaction_effs.pdf"),
+       plot = p_grid,
+       width = 8,
+       height = 5)
+
+```
+
+## predictors (TEAMSIZE)
+
+```{r}
+
+#log(2) # 0.693
+#log(5) # 1.609
+#log(20) # 2.996
+
+```
+
+
+```{r}
+
+# run hypothesis
+d_team_small_medium <- hypothesis(m_fos, "exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609) - 
+                         exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*0.693) > 0", alpha = 0.05)
+
+# gather results
+d_team_small_medium <- d_team_small_medium$hypothesis # Est: 2.23 (0.92, 3.84), Evid = 1599, Post.Prob = 1
+write_csv(d_team_small_medium, paste0(outpath, "team_small_medium_exp.csv"))
+
+```
+
+```{r}
+
+# hypothesis
+d_team_medium_large <- hypothesis(m_fos, "exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*2.996) - 
+                         exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609) > 0", alpha = 0.05)
+
+# gather results
+d_team_medium_large <- d_team_medium_large$hypothesis # Est: 5.03 (1.65, 9.85), Evid = 1599, Post.Prob = 1
+write_csv(d_team_medium_large, paste0(outpath, "team_medium_large_exp.csv"))
+
+```
+
+```{r}
+
+# hypothesis
+d_team_small_medium <- hypothesis(m_fos, "exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*0.693) > 0", alpha = 0.05)
+
+# gather results
+d_team_small_medium <- d_team_small_medium$hypothesis 
+write_csv(d_team_small_medium, paste0(outpath, "team_small_medium_cont.csv"))
+
+```
+
+```{r}
+
+# hypothesis
+d_team_medium_large <- hypothesis(m_fos, "exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*2.996) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609) > 0", alpha = 0.05)
+
+# gather results
+d_team_medium_large <- d_team_medium_large$hypothesis 
+write_csv(d_team_medium_large, paste0(outpath, "team_medium_large_cont.csv"))
+
+```
+
+```{r}
+
+# hypothesis
+d_team_small_medium_int <- hypothesis(m_fos, "(exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*0.693)) - (exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609) - exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*0.693)) > 0", alpha = 0.05)
+
+# gather results
+d_team_small_medium_int <- d_team_small_medium_int$hypothesis
+write_csv(d_team_small_medium_int, paste0(outpath, "team_small_medium_int.csv"))
+
+
+```
+
+
+```{r}
+
+# hypothesis
+d_team_medium_large_int <- hypothesis(m_fos, "(exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*2.996) - 
+                         exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*1.609)) - (exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*2.996) - exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*1.609)) > 0", alpha = 0.05)
+
+# gather results
+d_team_medium_large_int <- d_team_medium_large_int$hypothesis
+write_csv(d_team_medium_large_int, paste0(outpath, "team_medium_large_int.csv"))
+
+```

@@ -1,0 +1,121 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+# PACKAGES & SETUP
+
+```{r, include=FALSE}
+
+install.packages('tidyverse')
+library(tidyverse)
+
+```
+
+# R_FOS 
+
+## load data
+
+```{r, include=FALSE}
+
+inpath <- "/work/50114/MAG/data/modeling/"
+infile <- "psychology_replication_matched.csv"
+
+d_fos <- read_csv(paste0(inpath, infile)) %>% 
+  mutate(log_teamsize = log(n_authors), 
+         condition_fct = as_factor(condition), 
+         condition_fct = fct_relevel(condition_fct, c("experiment", "control")),
+         id_match = as_factor(match_group),
+         id_dct = as_factor(PaperId),
+         year_after_2005 = Year - 2005) %>%
+  select(condition_fct, condition, n_authors, log_teamsize, Year, year_after_2005, c_5)
+
+```
+
+```{r}
+# setup
+n_each_category = nrow(d_fos)/2
+n_total_records = nrow(d_fos)
+
+## ungrouped 
+fos_ungrouped <- d_fos %>%
+  summarize(c5_mean = mean(c_5), # 14.05
+            c5_median = median(c_5), # 5
+            c5_max = max(c_5), # 988
+            c5_var = var(c_5), # 1426.72
+            c5_sd = sd(c_5)) # 37.77
+
+# number of zero's
+fos_zero_ungrouped <- d %>% filter(c_5 == 0) %>% 
+  summarize(c5_zero = n()) %>% 
+  mutate(c5_zero_fraction = c5_zero / n_total_records) # 22.98% (285)
+
+fos_grouped <- d_fos %>% 
+  group_by(condition_fct) %>% 
+  summarize(c5_mean = mean(c_5), # e: 17.23, c: 10.88
+            c5_median = median(c_5), # e: 5, c: 4
+            c5_max = max(c_5), # e: 988, c: 153
+            c5_var = var(c_5), # e: 2510.64, c: 324.89
+            c5_sd = sd(c_5)) # e: 50.11, c: 18.02
+
+# number of zero's
+fos_zero_grouped <- d %>% filter(c_5 == 0) %>% 
+  group_by(condition_fct) %>% 
+  summarize(c5_zero = n()) %>% 
+  mutate(c5_zero_fraction = c5_zero / n_each_category) # e: 101 (16.29%), c: 184 (29.68%)
+
+```
+
+# R_QUERY
+
+```{r, include=FALSE}
+
+infile <- "psychology_replicat_matched.csv"
+d_query <- read_csv(paste0(inpath, infile)) %>% 
+  mutate(log_teamsize = log(n_authors), 
+         condition_fct = as_factor(condition), 
+         condition_fct = fct_relevel(condition_fct, c("experiment", "control")),
+         id_match = as_factor(match_group),
+         id_dct = as_factor(PaperId),
+         year_after_2005 = Year - 2005) %>%
+  select(condition_fct, condition, n_authors, log_teamsize, Year, year_after_2005, c_5)
+
+```
+
+```{r}
+# setup
+n_each_category = nrow(d_query)/2
+n_total_records = nrow(d_query)
+
+## ungrouped 
+query_ungrouped <- d_query %>%
+  summarize(c5_mean = mean(c_5), # 18.67
+            c5_median = median(c_5), # 7
+            c5_max = max(c_5), # 1764
+            c5_var = var(c_5), # 3902.62
+            c5_sd = sd(c_5)) # 62.47
+
+# number of zero's
+query_zero_ungrouped <- d_query %>% filter(c_5 == 0) %>% 
+  summarize(c5_zero = n()) %>% 
+  mutate(c5_zero_fraction = c5_zero / n_total_records) # 17.73% (424)
+
+query_grouped <- d_query %>% 
+  group_by(condition_fct) %>% 
+  summarize(c5_mean = mean(c_5), # e: 23.79, c: 13.55
+            c5_median = median(c_5), # e: 9, c: 6
+            c5_max = max(c_5), # e: 1764, c: 434
+            c5_var = var(c_5), # e: 7200.40, c: 555.57
+            c5_sd = sd(c_5)) # e: 84.86, c: 23.57
+
+# number of zero's
+query_zero_grouped <- d_query %>% filter(c_5 == 0) %>% 
+  group_by(condition_fct) %>% 
+  summarize(c5_zero = n()) %>% 
+  mutate(c5_zero_fraction = c5_zero / n_each_category) # e: 144 (12.04%), c: 280 (23.41%)
+```
+
+```{r}
+query_zero_ungrouped
+```
+

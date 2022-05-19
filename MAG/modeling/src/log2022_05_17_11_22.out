@@ -1,0 +1,21 @@
+-- running results.R (replication keyword) --
+Loading required package: pacman
+Loading required package: cmdstanr
+This is cmdstanr version 0.5.2
+- CmdStanR documentation and vignettes: mc-stan.org/cmdstanr
+- CmdStan path: /home/ucloud/.cmdstan/cmdstan-2.29.2
+- CmdStan version: 2.29.2
+Warning message:
+package ‘cmdstanr’ was built under R version 4.3.0 
+Rows: 2392 Columns: 9
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (3): condition, DocType, PaperTitle
+dbl (6): match_group, n_authors, PaperId, Year, days_after_2005, c_5
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+Error in glue("exp(condition_fctexperiment + condition_fctexperiment:log_teamsize*{mean_team_log} + condition_fctexperiment:year_after_2005*{mean_year}) - exp(condition_fctcontrol + condition_fctcontrol:log_teamsize*{mean_team_log} + condition_fctcontrol:year_after_2005*{mean_year}) > 0") : 
+  could not find function "glue"
+Calls: hypothesis -> hypothesis.brmsfit -> .hypothesis
+Execution halted

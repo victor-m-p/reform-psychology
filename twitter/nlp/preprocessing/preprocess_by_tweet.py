@@ -113,7 +113,7 @@ def clean_text(data, stopwords, TextFeatures):
     return df_main
 
 # main
-def main(infile, outpath):
+def main(infile, outpath, type):
     # print information
     print(f"--- starting: cleaning tweets ---")
 
@@ -125,12 +125,18 @@ def main(infile, outpath):
     print(f"{outname}")
 
     # only original tweets & lang = en
-    df_orig = df[df["type_tweet"] != "retweeted"]
+    print(f"type: {type}")
+    if type == "retweet": 
+        df_orig = df[df["type_tweet"] != "retweeted"]
+    else: 
+        df_orig = df[df["type_tweet"] == "original"]
+     
     df_orig = df_orig[df_orig["main_lang"] == "en"]
+    print(f"length data: {len(df_orig)}")
 
     # subset columns & rename
     cols = ["main_tweet_id", "main_author_username", "main_text", "main_tweet_date"]
-    df_sub = df_orig[cols]
+    df_sub = df_orig[cols] # was df_orig previously
     df_sub = df_sub.rename(columns = {
         'main_tweet_id': 'tweet_id',
         'main_author_username': 'username',
@@ -144,6 +150,7 @@ def main(infile, outpath):
     #total_stopwords = nltk_stopwords + additional_stopwords 
 
     # clean text data
+    df_sub = df_sub.reset_index(drop = True) ## important
     df_concat = clean_text(df_sub, total_stopwords, TextFeatures)
 
     # print information
@@ -151,7 +158,7 @@ def main(infile, outpath):
     print(f"length cleaned tweets: {len(df_concat)}")
 
     # write file 
-    df_concat.to_csv(f"{outpath}{outname}_tweet_text.csv", index=False)
+    df_concat.to_csv(f"{outpath}{outname}_type{type}.csv", index=False)
 
     # print information
     print(f"--- finished: writing file ---")
@@ -160,6 +167,7 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--infile", required=True, type=str, help="path to input file (pickle)")
     ap.add_argument("-o", "--outpath", required=True, type=str, help="path to folder for output csv")
+    ap.add_argument("-t", "--type", required=True, type=str, help="original (only) or only remove retweet")
     args = vars(ap.parse_args())
 
-    main(infile = args['infile'], outpath = args['outpath'])
+    main(infile = args['infile'], outpath = args['outpath'], type = args["type"])

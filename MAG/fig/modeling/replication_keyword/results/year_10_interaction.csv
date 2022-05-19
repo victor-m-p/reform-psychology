@@ -1,0 +1,2 @@
+Hypothesis,Estimate,Est.Error,CI.Lower,CI.Upper,Evid.Ratio,Post.Prob,Star
+((exp(condition_fctexperiment+condition_fctexperiment:year_after_2005*10)-exp(condition_fctexperiment))-(exp(condition_fctcontrol+condition_fctcontrol:year_after_2005*10)-exp(condition_fctcontrol))) > 0,-0.002746134278407924,1.1804256521704588,-1.9606796791281593,1.9048476721185739,1.007024586051179,0.50175,

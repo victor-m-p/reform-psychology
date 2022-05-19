@@ -1,0 +1,11 @@
+Loading required package: pacman
+Loading required package: cmdstanr
+This is cmdstanr version 0.5.2
+- CmdStanR documentation and vignettes: mc-stan.org/cmdstanr
+- CmdStan path: /home/ucloud/.cmdstan/cmdstan-2.29.2
+- CmdStan version: 2.29.2
+Warning message:
+package ‘cmdstanr’ was built under R version 4.3.0 
+Error: '/work/50114/MAG/data/modeling/echo' does not exist.
+Execution halted
+main_tmp.sh: line 36: psychology_replicat_matched.csv: command not found

@@ -1,0 +1,94 @@
+-- running explore_priors.R --
+Loading required package: pacman
+Installing package into ‘/usr/local/lib/R/site-library’
+(as ‘lib’ is unspecified)
+trying URL 'http://cran.r-project.org/src/contrib/extraDistr_1.9.1.tar.gz'
+Content type 'application/x-gzip' length 147894 bytes (144 KB)
+==================================================
+downloaded 144 KB
+
+ERROR: failed to lock directory ‘/usr/local/lib/R/site-library’ for modifying
+Try removing ‘/usr/local/lib/R/site-library/00LOCK-extraDistr’
+
+The downloaded source packages are in
+	‘/tmp/Rtmpf75POX/downloaded_packages’
+Warning messages:
+1: In utils::install.packages(package, ...) :
+  installation of package ‘extraDistr’ had non-zero exit status
+2: In p_install(package, character.only = TRUE, ...) : 
+3: In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘extraDistr’
+4: In pacman::p_load(tidyverse, brms, ggthemes, bayesplot, cowplot,  :
+  Failed to install/load:
+extraDistr
+Loading required package: cmdstanr
+This is cmdstanr version 0.5.2
+- CmdStanR documentation and vignettes: mc-stan.org/cmdstanr
+- CmdStan path: /home/ucloud/.cmdstan/cmdstan-2.29.2
+- CmdStan version: 2.29.2
+Warning message:
+package ‘cmdstanr’ was built under R version 4.3.0 
+Error: Problem with `mutate()` column `density`.
+ℹ `density = dgpois(x, shape = shape, scale = theta)`.
+x could not find function "dgpois"
+Backtrace:
+     █
+  1. ├─global::plot_dgpois(...)
+  2. │ └─`%>%`(...)
+  3. ├─ggplot2::ggplot(., aes(x = x, y = density, color = as.factor(shape)))
+  4. ├─dplyr::mutate(...)
+  5. ├─dplyr:::mutate.data.frame(...)
+  6. │ └─dplyr:::mutate_cols(.data, ..., caller_env = caller_env())
+  7. │   ├─base::withCallingHandlers(...)
+  8. │   └─mask$eval_all_mutate(quo)
+  9. └─base::.handleSimpleError(...)
+ 10.   └─dplyr:::h(simpleError(msg, call))
+Execution halted
+-- REPLICATION_FOS --
+-- running main_model.R (replication_fos) --
+Loading required package: pacman
+Loading required package: cmdstanr
+This is cmdstanr version 0.5.2
+- CmdStanR documentation and vignettes: mc-stan.org/cmdstanr
+- CmdStan path: /home/ucloud/.cmdstan/cmdstan-2.29.2
+- CmdStan version: 2.29.2
+Warning message:
+package ‘cmdstanr’ was built under R version 4.3.0 
+Rows: 1240 Columns: 11
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (4): condition, DocType, NormalizedNameSub, PaperTitle
+dbl (7): match_group, FamilyId, n_authors, PaperId, Year, days_after_2005, c_5
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+                prior class                                    coef    group
+               (flat)     b                                                 
+               (flat)     b                    condition_fctcontrol         
+               (flat)     b       condition_fctcontrol:log_teamsize         
+               (flat)     b    condition_fctcontrol:year_after_2005         
+               (flat)     b                 condition_fctexperiment         
+               (flat)     b    condition_fctexperiment:log_teamsize         
+               (flat)     b condition_fctexperiment:year_after_2005         
+               lkj(1)   cor                                                 
+               lkj(1)   cor                                         id_match
+ student_t(3, 0, 2.5)    sd                                                 
+ student_t(3, 0, 2.5)    sd                                         id_match
+ student_t(3, 0, 2.5)    sd                    condition_fctcontrol id_match
+ student_t(3, 0, 2.5)    sd                 condition_fctexperiment id_match
+    gamma(0.01, 0.01) shape                                                 
+ resp dpar nlpar lb ub       source
+                            default
+                       (vectorized)
+                       (vectorized)
+                       (vectorized)
+                       (vectorized)
+                       (vectorized)
+                       (vectorized)
+                            default
+                       (vectorized)
+                  0         default
+                  0    (vectorized)
+                  0    (vectorized)
+                  0    (vectorized)
+                  0         default

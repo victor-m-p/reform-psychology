@@ -212,7 +212,7 @@ plot_dgpois <- function(title_size,
           axis.text = element_text(size = tick_size),
           axis.title = element_text(size = label_size),
           legend.text = element_text(size = label_size),
-          legend.position = c(0.87, 0.87)) +
+          legend.position = c(0.75, 0.75)) +
     scale_color_manual(values = color_lst,
                        name = TeX("Shape ($\\phi$)"))
   

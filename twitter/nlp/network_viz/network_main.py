@@ -430,7 +430,7 @@ def main(inpath, outpath, query1, query2, method, thresholds, nlabels, GCC):
         
         ## labels ---> next step 
         if nlabels > 0: 
-            edgesize = [x*6 if x > 150 else 0 for x in edgesize]
+            edgesize = [x*6 if x > 150 else 0 for x in edgesize] # 150 at minimum
             dct_labels = defaultdict()
             if reverse == True: 
                 for num, ele in enumerate(nodelst_weighted): 

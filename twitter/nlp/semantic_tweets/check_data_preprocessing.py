@@ -163,7 +163,7 @@ df_combined = df_total_authors.merge(df_semantic_authors, on = "username", how =
 len(df_combined) # 843: we lack them here as well --> and we apparently should as well. 
 len(df_semantic_authors) # 978: we have them here. 
 
-### find the accounts that we are lackign ###
+### find the accounts that we are lacking ###
 semantic_authors = list(df_semantic_authors["username"])
 combined_authors = list(df_combined["username"])
 missing_authors = list(set(semantic_authors) - set(combined_authors))

@@ -77,7 +77,7 @@ def fill_grid(d1, d2, var):
     var: <str> column name
     '''
     # create grid
-    year_grid = [i for i in range(d1["Year"].min(), d1["Year"].max())]
+    year_grid = [i for i in range(d1["Year"].min(), d1["Year"].max()+1)]
     var_grid = sorted(list(d1[var].unique())) 
 
     d_grid = pd.DataFrame(

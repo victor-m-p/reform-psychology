@@ -79,7 +79,7 @@ G = nx.from_pandas_edgelist(
 
 ## GCC
 largest_cc = max(nx.connected_components(G), key=len)
-G = G.subgraph(largest_cc)
+G = G.subgraph(largest_cc) # nodes: 275 --> 249
 
 ## by degree in the network
 def degree_information(G, method, metric):
